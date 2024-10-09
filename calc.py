@@ -1,4 +1,6 @@
 import asyncio
+from math import factorial
+from decimal import Decimal
 
 class BaseCalc:
     # Удаление нулей в конце числа после запятой (наследие с C++)
@@ -34,11 +36,14 @@ class CalculateMain:
     async def _tokenize(self, expression: str) -> list[str]:
         tokens: list[str] = list()
         token: str = ""
+        minus: bool = True
         
         for c in expression:
-            if c.isdigit() or c == '.' or (not token and c == '-'):
+            if c.isdigit() or c == '.' or (minus and c == '-'):
                 token += c
+                minus = False
             else:
+                minus = True
                 if token:
                     tokens.append(token)
                     token = ""
@@ -48,25 +53,41 @@ class CalculateMain:
             tokens.append(token)  # Последнее число в выражении
         
         return tokens
-    async def _calculate_expression(self, tokens: list[str]) -> str:
-        result = float(tokens[0])
-        last_operator = '+'
-
+    async def _calculate_expression_priority(self, tokens: list[str]) -> list[str]:
+        if not ('%' in tokens or '!' in tokens): return tokens
+        t: int
+        while '%' in tokens:
+            t = tokens.index('%')
+            print(tokens)
+            tokens.pop(t)
+            tokens[t-1] = str(Decimal(tokens[t-1])/Decimal(100))
+        while '!' in tokens:
+            t = tokens.index('!')
+            tokens.pop(t)
+            tokens[t-1] = factorial(int(tokens[t-1]))
+        return tokens
+            
+    async def _calculate_expression_base(self, tokens: list[str]) -> str:
+        print(tokens)
+        result: Decimal = Decimal(tokens[0])
+        last_operator: str = '+'
+        token: str
+        num: Decimal
         for i in range(1, len(tokens)):
             token = tokens[i]
-            if token in {"+", "-", "*", "/", "^"}:
+            if token in {"+", "-", ":","*", "/", "^", "×", "−"}:
                 last_operator = token
             else:
-                num = float(token)
+                num = Decimal(token)
                 if i > 1 and tokens[i - 2] == "-":
                     num *= -1
                 # Выполнение действий
                 match last_operator:
                     case '+': result += num
-                    case '-': result -= num
-                    case '*': result *= num
+                    case '-' | '−': result -= num
+                    case '*' | '×' : result *= num
                     case '/' | ':' :
-                        if num == 0:
+                        if num != 0:
                             result /= num
                         else:
                             raise ZeroDivisionError("Division by zero")
@@ -89,15 +110,25 @@ class CalculateMain:
                 inner_expression = expression_1[priority_brackets[0] + 1:priority_brackets[1]]
                 expression_1 = (
                     expression_1[:priority_brackets[0]] +
-                    (await self._calculate_expression(await self._tokenize(inner_expression))) +
+                    (await self._calculate_expression_base(await self._calculate_expression_priority(await self._tokenize(inner_expression)))) +
                     expression_1[priority_brackets[1] + 1:]
                 )
-            return await BaseCalc.removing_zeros(str(await self._calculate_expression(await self._tokenize(expression_1))))
+            return await BaseCalc.removing_zeros(str(await self._calculate_expression_base(await self._calculate_expression_priority(await self._tokenize(expression_1)))))
             
         except Exception as e:
             print(e)
             return expression
-
+"""
+class Percent:
+    self._operators_4: str = "+=/*"
+    self._operators_2: str = "/*"
+    async def _computeResult(priority_operator: str, kl: str) -> str:
+        result: str
+        if self._operators_2:
+            result = str(float(kl)/100)
+        else:
+            kl_1: str 
+"""
 async def main() -> None:
     CalculateMain_v = CalculateMain()
     while True:
