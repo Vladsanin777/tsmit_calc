@@ -1,6 +1,12 @@
+import gi
 import asyncio
 from math import factorial
 from decimal import Decimal
+
+gi.require_version('Gtk', '4.0')
+
+from gi.repository import Gtk
+
 
 class BaseCalc:
     # Удаление нулей в конце числа после запятой (наследие с C++)
@@ -43,7 +49,8 @@ class CalculateMain:
                 token += c
                 minus = False
             else:
-                minus = True
+                if token in "%!":
+                    minus = True
                 if token:
                     tokens.append(token)
                     token = ""
@@ -53,6 +60,7 @@ class CalculateMain:
             tokens.append(token)  # Последнее число в выражении
         
         return tokens
+    # Calculate persent and factorial
     async def _calculate_expression_priority(self, tokens: list[str]) -> list[str]:
         if not ('%' in tokens or '!' in tokens): return tokens
         t: int
@@ -66,34 +74,41 @@ class CalculateMain:
             tokens.pop(t)
             tokens[t-1] = factorial(int(tokens[t-1]))
         return tokens
-            
+    # Main method for calculate
     async def _calculate_expression_base(self, tokens: list[str]) -> str:
         print(tokens)
         result: Decimal = Decimal(tokens[0])
         last_operator: str = '+'
         token: str
         num: Decimal
-        for i in range(1, len(tokens)):
-            token = tokens[i]
-            if token in {"+", "-", ":","*", "/", "^", "×", "−"}:
-                last_operator = token
-            else:
-                num = Decimal(token)
-                if i > 1 and tokens[i - 2] == "-":
-                    num *= -1
-                # Выполнение действий
-                match last_operator:
-                    case '+': result += num
-                    case '-' | '−': result -= num
-                    case '*' | '×' : result *= num
-                    case '/' | ':' :
-                        if num != 0:
-                            result /= num
-                        else:
-                            raise ZeroDivisionError("Division by zero")
-                    case '^' : result **= num
         
-        return str(result)
+        while len(tokens) != 1:
+            if '*' in tokens:
+                priority_operator_index = tokens.index('*')
+                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                tokens.pop(priority_operator_index)
+                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                tokens[priority_operator_index-1] = str(a*b)
+            elif '/' in tokens:
+                priority_operator_index = tokens.index('/')
+                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                tokens.pop(priority_operator_index)
+                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                tokens[priority_operator_index-1] = str(a/b)
+            elif '-' in tokens:
+                priority_operator_index = tokens.index('-')
+                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                tokens.pop(priority_operator_index)
+                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                tokens[priority_operator_index-1] = str(a-b)
+            elif '+' in tokens:
+                priority_operator_index = tokens.index('+')
+                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                tokens.pop(priority_operator_index)
+                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                tokens[priority_operator_index-1] = str(a+b)
+        return tokens[0]
+
     # Основная функция подсчёта
     async def calc_main(self, *, expression: str) -> str:
         expression = expression.replace(" ", "")
@@ -118,20 +133,14 @@ class CalculateMain:
         except Exception as e:
             print(e)
             return expression
-"""
-class Percent:
-    self._operators_4: str = "+=/*"
-    self._operators_2: str = "/*"
-    async def _computeResult(priority_operator: str, kl: str) -> str:
-        result: str
-        if self._operators_2:
-            result = str(float(kl)/100)
-        else:
-            kl_1: str 
-"""
+
+class UI:
+    colors_backgraund: list[str] = ["#99FF18", "#FFF818", "#FFA918", "#FF6618", "#FF2018", "#FF1493", "#FF18C9", "#CB18FF", "#9118FF", "#5C18FF", "#1F75FE", "#00BFFF", "#18FFE5", "#00FA9A", "#00FF00", "#7FFF00", "#CEFF1D"]
+
+window = Gtk.Window()
+
 async def main() -> None:
     CalculateMain_v = CalculateMain()
     while True:
         print(await CalculateMain_v.calc_main(expression = str(input("Input expression :"))))
 asyncio.run(main())
-
