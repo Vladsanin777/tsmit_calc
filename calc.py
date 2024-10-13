@@ -236,7 +236,7 @@ class MainWindow(Gtk.ApplicationWindow):
         button.set_hexpand(True)
         button.set_vexpand(True)
     # Adding place for button
-    def add_cell_for_button(self, column: int, row: int) -> None:
+    def add_cell_for_button(self, label_button, column: int, row: int) -> None:
         cell: Gtk.Box = Gtk.Box(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self._grid_main_calc.attach(cell, column, row, 1, 1)
         cell.set_hexpand(True)
@@ -249,34 +249,42 @@ class MainWindow(Gtk.ApplicationWindow):
         drop_target.set_name("drop-targer-all")
         cell.set_css_classes(["drop-target-cell-button-box"])
         cell.add_controller(drop_target)
+
+        self.add_basic_main_button(label_button, cell)
+        
+
     # Обработка получения кнопки в ячейке
-    def on_drop(self, drop_target, name, x, y) -> bool:
+    def on_drop(self, drop_target, label, x, y) -> bool:
         # Определяем, к какой ячейке произошло перетаскивание
         cell = drop_target.get_widget()  # Получаем ячейку, в которую дропнули
         
         # Проверка на наличие уже существующей кнопки в ячейке
         if (current_button := cell.get_first_child()) is not None:
             cell.remove(current_button)
+
+        self.add_basic_main_button(label, cell)
         
 
-
+    def add_basic_main_button(self, label: str, cell: Gtk.Box()) -> None:
         # Создаем новую кнопку с тем же именем и добавляем в целевую ячейку
-        new_button = Gtk.Button(label=name)
+        new_button = Gtk.Button(label=label)
 
         new_button.set_hexpand(True)
         new_button.set_vexpand(True)
 
         new_button.set_css_classes(["keybord-base-calc"])
-        new_button.set_name(name)  # Устанавливаем имя новой кнопки
         cell.append(new_button)  # Добавляем кнопку в целевую ячейку
         
         return True
 
 
     def row_and_column_index_for_cell(self, count_row: int = 5, count_column: int = 5, start_column: int = 0, start_row: int = 1) -> None:
+        labels_buttons_defalut: list[str] = ["()", "(", ")", "mod", "_PI", "7", "8", "9", ":", "sqrt", "4", "5", "6", "*", "^", "1", "2", "3", "-", "!", "0", ".", "%", "+", "="]
+        i: int = 0
         for row in range(start_row, count_row + start_row):
             for column in range(start_column, count_column + start_column):
-                self.add_cell_for_button(column, row)
+                self.add_cell_for_button(labels_buttons_defalut[i], column, row)
+                i += 1
 
     def graphical_main_calc(self) -> None:
         self._grid_main_calc = Gtk.Grid()
@@ -378,11 +386,26 @@ class MainWindow(Gtk.ApplicationWindow):
         self._grid_f_basic_calc_digit_10()
         self._grid_basic_calc_operators = Gtk.Grid()
         self._grid_f_basic_calc_operators()
+        self._grid_basic_calc_consts = Gtk.Grid()
+        self._grid_f_basic_calc_consts()
+        self._grid_basic_calc_others = Gtk.Grid()
+        self._grid_f_basic_calc_others()
 
         self.create_tab(self.notebook_basic, "digits 10", self._grid_basic_calc_digit_10)
         self.create_tab(self.notebook_basic, "operators", self._grid_basic_calc_operators)
 
-        self.create_tab(self.notebook_basic, "consts", Gtk.Grid())
+        self.create_tab(self.notebook_basic, "others", self._grid_basic_calc_others)
+
+        self.create_tab(self.notebook_basic, "consts", self._grid_basic_calc_consts)
+
+    def _grid_f_basic_calc_others(self) -> None:
+        for i, (column, row) in {"round": [0, 0], "mod": [1, 0], "0x": [2, 0], "0b": [3, 0], "0": [4, 0]}.items():
+            self.button_for_main_calc(i, self._grid_basic_calc_others, column, row)
+
+    def _grid_f_basic_calc_consts(self) -> None:
+        for i, (column, row) in {"_PI": [0, 0], "_E": [1, 0]}.items():
+            self.button_for_main_calc(i, self._grid_basic_calc_consts, column, row)
+
 
     def _grid_f_basic_calc_operators(self) -> None:
         for i, (column, row) in {"+": [0, 0], "-": [1, 0], ":": [2, 0], "*": [3, 0], "^": [4, 0], "!": [0, 1], "sqrt": [1, 1], "ln": [2, 1], "log": [3, 1], "lg": [4, 1]}.items():
