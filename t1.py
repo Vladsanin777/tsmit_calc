@@ -28,15 +28,18 @@ class DragDropExample(Gtk.ApplicationWindow):
 
         # Добавляем кнопки в первый контейнер
         for i in range(3):
-            button = Gtk.Button(label=f"Button {i + 1}")
-            button.set_name(f"button_{i + 1}")  # Уникальное имя для кнопки
-
+            label_button = Gtk.Label.new(f"Button {i + 1}")
+            (button := Gtk.Button()).set_child(label_button)
+            button.set_margin_start(0)  # Убираем внешние отступы
+            button.set_margin_end(0)
+            button.set_margin_top(0)
+            button.set_margin_bottom(0)
             self.box1.append(button)
 
             # Настройка DragSource для каждой кнопки
             drag_source = Gtk.DragSource()
             drag_source.connect("prepare", self.on_drag_prepare)
-            button.add_controller(drag_source)
+            label_button.add_controller(drag_source)
 
         # Настройка DropTarget для каждой ячейки
         for cell in self.drop_cells:
@@ -53,7 +56,6 @@ class DragDropExample(Gtk.ApplicationWindow):
             #drop_cell_1, #drop_cell_2, #drop_cell_3, #drop_cell_4, #drop_cell_5 {
                 background-color: rgba(204, 204, 204, 1); /* Светло-серый фон */
                 border: 2px dashed rgba(150, 150, 150, 1); /* Дашированный бордер */
-                border: none;
                 margin: 0;  /* Убираем внешние отступы */
             }
             #drop_cell_1:hover, #drop_cell_2:hover, #drop_cell_3:hover, #drop_cell_4:hover, #drop_cell_5:hover {
@@ -66,8 +68,8 @@ class DragDropExample(Gtk.ApplicationWindow):
 
     # Подготовка данных для перетаскивания (отправляем имя кнопки)
     def on_drag_prepare(self, drag_source, x, y):
-        button = drag_source.get_widget()  # Получаем кнопку, с которой начинается DnD
-        return Gdk.ContentProvider.new_for_value(button.get_name())  # Возвращаем уникальное имя кнопки как данные
+        label = drag_source.get_widget()  # Получаем кнопку, с которой начинается DnD
+        return Gdk.ContentProvider.new_for_value(label.get_text())  # Возвращаем уникальное имя кнопки как данные
 
     # Обработка получения кнопки в ячейке
     def on_drop(self, drop_target, name, x, y):
@@ -82,7 +84,10 @@ class DragDropExample(Gtk.ApplicationWindow):
         # Создаем новую кнопку с тем же именем и добавляем в целевую ячейку
         new_button = Gtk.Button(label=name)
         new_button.set_name(name)  # Устанавливаем имя новой кнопки
-
+        new_button.set_margin_start(0)  # Убираем отступы у кнопки
+        new_button.set_margin_end(0)
+        new_button.set_margin_top(0)
+        new_button.set_margin_bottom(0)
         cell.append(new_button)  # Добавляем кнопку в целевую ячейку
         
         return True

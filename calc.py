@@ -224,17 +224,24 @@ class MainWindow(Gtk.ApplicationWindow):
         self.create_tab(self.notebook, "Вкладка 2", Gtk.Grid())
         self.create_tab(self.notebook, "Вкладка 3", Gtk.Grid())
 
-    def button_for_main_calc(self, label: str, grid: Gtk.Grid, column: int, row: int, width: int = 1, height: int = 1) -> None:
-        button = Gtk.Button(label = label)
+    def button_for_main_calc(self, label: str, grid: Gtk.Grid, column: int, row: int, width: int = 1, height: int = 1) -> Gtk.Button:
+        # Создаем новую кнопку с тем же именем и добавляем в целевую ячейку
+        label_button: Gtk.Label = Gtk.Label.new(label)
+        label_button.set_css_classes(["label-button-basic-calc"])
+        label_button.set_hexpand(True)
+        label_button.set_vexpand(True)
+        button = Gtk.Button()
+        button.set_child(label_button)
         button.set_css_classes(["keybord-base-calc"])
-        button.set_name(f"{label}")
         grid.attach(button, column, row, width, height)
+        button.connect("clicked", self.inputing_entry, label)
         # Настройка DragSource для каждой кнопки
         drag_source = Gtk.DragSource()
         drag_source.connect("prepare", self.on_drag_prepare)
-        button.add_controller(drag_source)
+        label_button.add_controller(drag_source)
         button.set_hexpand(True)
         button.set_vexpand(True)
+        return button
     # Adding place for button
     def add_cell_for_button(self, label_button, column: int, row: int) -> None:
         cell: Gtk.Box = Gtk.Box(spacing=0, orientation=Gtk.Orientation.VERTICAL)
@@ -267,16 +274,28 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def add_basic_main_button(self, label: str, cell: Gtk.Box()) -> None:
         # Создаем новую кнопку с тем же именем и добавляем в целевую ячейку
-        new_button = Gtk.Button(label=label)
+        label_button: Gtk.Label = Gtk.Label.new(label)
+        label_button.set_css_classes(["label-button-basic-calc"])
+        label_button.set_hexpand(True)
+        label_button.set_vexpand(True)
+        new_button = Gtk.Button()
+        new_button.set_child(label_button)
 
         new_button.set_hexpand(True)
         new_button.set_vexpand(True)
 
+        new_button.connect("clicked", self.inputing_entry, label)
+
         new_button.set_css_classes(["keybord-base-calc"])
         cell.append(new_button)  # Добавляем кнопку в целевую ячейку
-        
-        return True
 
+        # Настройка DragSource для каждой кнопки
+        drag_source = Gtk.DragSource()
+        drag_source.connect("prepare", self.on_drag_prepare)
+        label_button.add_controller(drag_source)
+
+    def inputing_entry(self, button, label_button) -> None:
+        self.entry_for_expression.set_text(self.entry_for_expression.get_text() + label_button)
 
     def row_and_column_index_for_cell(self, count_row: int = 5, count_column: int = 5, start_column: int = 0, start_row: int = 1) -> None:
         labels_buttons_defalut: list[str] = ["()", "(", ")", "mod", "_PI", "7", "8", "9", ":", "sqrt", "4", "5", "6", "*", "^", "1", "2", "3", "-", "!", "0", ".", "%", "+", "="]
@@ -285,17 +304,27 @@ class MainWindow(Gtk.ApplicationWindow):
             for column in range(start_column, count_column + start_column):
                 self.add_cell_for_button(labels_buttons_defalut[i], column, row)
                 i += 1
+        
+
+    def clear_entry(self, button) -> None:
+        self.entry_for_expression.set_text("")
+
+    def back_space_entry(self, button) -> None:
+        self.entry_for_expression.set_text(self.entry_for_expression.get_text()[:-1])
 
     def graphical_main_calc(self) -> None:
         self._grid_main_calc = Gtk.Grid()
         # button delete all expression
-        self.button_for_main_calc("C", self._grid_main_calc, 0, 0)
+        button_C: Gtk.Button = self.button_for_main_calc("C", self._grid_main_calc, 0, 0)
+        button_C.connect("clicked", self.clear_entry)
         # entry for input expression
-        entry_for_expression = Gtk.Entry()
-        entry_for_expression.set_css_classes(["keybord-base-calc"])
-        self._grid_main_calc.attach(entry_for_expression, 1, 0, 3, 1)
+        self.entry_for_expression = Gtk.Entry()
+        self.entry_for_expression.set_css_classes(["keybord-base-calc"])
+        self._grid_main_calc.attach(self.entry_for_expression, 1, 0, 3, 1)
         # button backspace
-        self.button_for_main_calc("<-", self._grid_main_calc, 4, 0)
+        button_back_space: Gtk.Button = self.button_for_main_calc("<-", self._grid_main_calc, 4, 0)
+        button_back_space.connect("clicked", self.back_space_entry)
+
         # Creating place for button for drag and drop
         self.row_and_column_index_for_cell()
         """
@@ -391,7 +420,13 @@ class MainWindow(Gtk.ApplicationWindow):
         self._grid_basic_calc_others = Gtk.Grid()
         self._grid_f_basic_calc_others()
 
+        self._grid_basic_calc_digit_16 = Gtk.Grid()
+        self._grid_f_basic_calc_digit_16()
+
         self.create_tab(self.notebook_basic, "digits 10", self._grid_basic_calc_digit_10)
+
+        self.create_tab(self.notebook_basic, "digits 16", self._grid_basic_calc_digit_16)
+
         self.create_tab(self.notebook_basic, "operators", self._grid_basic_calc_operators)
 
         self.create_tab(self.notebook_basic, "others", self._grid_basic_calc_others)
@@ -411,6 +446,10 @@ class MainWindow(Gtk.ApplicationWindow):
         for i, (column, row) in {"+": [0, 0], "-": [1, 0], ":": [2, 0], "*": [3, 0], "^": [4, 0], "!": [0, 1], "sqrt": [1, 1], "ln": [2, 1], "log": [3, 1], "lg": [4, 1]}.items():
             self.button_for_main_calc(i, self._grid_basic_calc_operators, column, row)
 
+    def _grid_f_basic_calc_digit_16(self) -> None:
+        for i, (column, row) in {"A": [0, 0], "B": [1, 0], "C": [2, 0], "D": [0, 1], "E": [1, 1], "F": [2, 1]}.items():
+            self.button_for_main_calc(i, self._grid_basic_calc_digit_16, column, row)
+
     def _grid_f_basic_calc_digit_10(self) -> None:
         for i, (column, row) in {"1": [0, 0], "2": [1, 0], "3": [2, 0], "4": [3, 0], "5": [4, 0], "6": [0, 1], "7": [1, 1], "8": [2, 1], "9": [3, 1], "0": [4, 1]}.items():
             self.button_for_main_calc(i, self._grid_basic_calc_digit_10, column, row)
@@ -425,8 +464,7 @@ class MainWindow(Gtk.ApplicationWindow):
         notebook.append_page(grid_information, tab_label)
     # Подготовка данных для перетаскивания (отправляем имя кнопки)
     def on_drag_prepare(self, drag_source, x, y):
-        button = drag_source.get_widget()  # Получаем кнопку, с которой начинается DnD
-        return Gdk.ContentProvider.new_for_value(button.get_name())  # Возвращаем уникальное имя кнопки как данные
+        return Gdk.ContentProvider.new_for_value(drag_source.get_widget().get_label())  # Возвращаем уникальное имя кнопки как данные
 
     
 class MyApplication(Gtk.Application):
@@ -438,6 +476,11 @@ class MyApplication(Gtk.Application):
         win = MainWindow(self)
         # Загрузка CSS
         UI.apply_css("""
+            lable.label-button-basic-calc{
+                padding: 40px;
+                margin: -40px;
+                border: none;
+            }
             #drop-target-all {
                 margin: 0px;
                 border: none;
