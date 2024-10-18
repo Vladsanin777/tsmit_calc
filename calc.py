@@ -149,7 +149,7 @@ class UI:
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(),
             css_provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            Gtk.STYLE_PROVIDER_PRIORITY_USER
         )
     @staticmethod
     def window_coloring(button: Gtk.Button = None):
@@ -177,16 +177,46 @@ class CustomTitleBar(Gtk.HeaderBar):
         color_fon_button.connect("clicked", UI.window_coloring)
         self.pack_start(color_fon_button)
 
+        view_setting_button = Gtk.MenuButton.new()
+        view_setting_button.set_css_classes(["header_element"])
+        view_setting_button.set_child(label_menu_button := Gtk.Label(label = "Veiw"))
+        self.pack_end(view_setting_button)
+        view_setting_button.set_popover(popover_menu_button := Gtk.Popover.new())
 
-    def on_language_clicked(self, button): pass
+        popover_menu_button.set_css_classes(["header_popover_menu_button"])
 
-    def on_close_clicked(self, button):
+        popover_menu_button.set_child(grid_header_button := Gtk.Grid())
+        grid_header_button.set_hexpand(True)
+        grid_header_button.set_vexpand(True)
+        grid_header_button.attach(button_general_histori := Gtk.Button(label = "general\nhistori"), 0, 0, 1, 1)
+        grid_header_button.attach(button_local_histori := Gtk.Button(label = "local\nhistori"), 0, 1, 1, 1)
+
+        # Установка отступов в ноль между строками и столбцами
+        grid_header_button.set_row_spacing(0)
+        grid_header_button.set_column_spacing(0)
+        grid_header_button.set_margin_top(0)
+        grid_header_button.set_margin_bottom(0)
+        grid_header_button.set_margin_start(0)
+        grid_header_button.set_margin_end(0)
+
+        button_general_histori.set_hexpand(True)
+        button_general_histori.set_vexpand(True)
+        button_local_histori.set_vexpand(True)
+        button_local_histori.set_hexpand(True)
+
+    def button_settings_view_general_histori(self, button) -> None:
+       pass 
+
+
+    def on_language_clicked(self, button) -> None: pass
+
+    def on_close_clicked(self, button) -> None:
         Gtk.main_quit()
 
-    def on_minimize_clicked(self, button):
+    def on_minimize_clicked(self, button) -> None:
         self.get_window().iconify()
 
-    def on_maximize_clicked(self, button):
+    def on_maximize_clicked(self, button) -> None:
         # Альтернативный способ развертывания окна
         window = self.get_window()
         if window.is_maximized():
@@ -200,21 +230,25 @@ class MainWindow(Gtk.ApplicationWindow):
 
     _grid_main_calc: Gtk.Grid
     notebook: Gtk.Notebook
+    general_histori: Gtk.Box
+    local_histori_main: Gtk.Box
+    main_grid: Gtk.Grid
 
     def __init__(self, app):
         super().__init__(application=app)
         self.set_title("Calculator")
         self.set_titlebar(CustomTitleBar()) 
         self.set_default_size(400, 600)
-        (main_grid := Gtk.Grid()).set_css_classes(["main_grid"])
-        self.set_child(main_grid)
+        self.main_grid = Gtk.Grid()
+        self.main_grid.set_css_classes(["main_grid"])
+        self.set_child(self.main_grid)
         
         # Создаем контейнер для вкладок
         self.notebook = Gtk.Notebook()
         self.notebook.set_hexpand(True)
         self.notebook.set_vexpand(True)
 
-        main_grid.attach(self.notebook, 0,0,1,1)
+        self.main_grid.attach(self.notebook, 0, 4, 1, 9)
 
 
         self.graphical_main_calc()
@@ -223,8 +257,31 @@ class MainWindow(Gtk.ApplicationWindow):
         self.create_tab(self.notebook, "Base", self._grid_main_calc)
         self.create_tab(self.notebook, "Вкладка 2", Gtk.Grid())
         self.create_tab(self.notebook, "Вкладка 3", Gtk.Grid())
+        self.create_general_histori()
 
-    def button_for_main_calc(self, label: str, grid: Gtk.Grid, column: int, row: int, width: int = 1, height: int = 1) -> Gtk.Button:
+    def create_general_histori(self) -> None:
+        self.general_histori = Gtk.Box()
+        self.main_grid.attach(self.general_histori, 0, 0, 1, 4)
+        self.general_histori.set_hexpand(True)
+        self.general_histori.set_vexpand(True)
+        self.scrolled_window_general_histori = Gtk.ScrolledWindow()
+        # Установка политики прокрутки (как по вертикали, так и по горизонтали)
+        self.scrolled_window_general_histori.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+
+        self.empty_element_for_scrolled_window_general_histori = Gtk.Grid()
+
+        self.empty_element_for_scrolled_window_general_histori.set_css_classes(["histori-element"])
+        
+        self.empty_element_for_scrolled_window_general_histori.set_hexpand(True)
+        
+        self.empty_element_for_scrolled_window_general_histori.set_vexpand(True)
+        
+        self.scrolled_window_general_histori.set_child(self.empty_element_for_scrolled_window_general_histori)
+
+        self.general_histori.append(self.scrolled_window_general_histori)
+
+
+    def button_for_main_calc(self, label: str, grid: Gtk.Grid, column: int, row: int, connect: bool = True, width: int = 1, height: int = 1) -> Gtk.Button:
         # Создаем новую кнопку с тем же именем и добавляем в целевую ячейку
         label_button: Gtk.Label = Gtk.Label.new(label)
         label_button.set_css_classes(["label-button-basic-calc"])
@@ -234,7 +291,7 @@ class MainWindow(Gtk.ApplicationWindow):
         button.set_child(label_button)
         button.set_css_classes(["keybord-base-calc"])
         grid.attach(button, column, row, width, height)
-        button.connect("clicked", self.inputing_entry, label)
+        if connect: button.connect("clicked", self.inputing_entry, label)
         # Настройка DragSource для каждой кнопки
         drag_source = Gtk.DragSource()
         drag_source.connect("prepare", self.on_drag_prepare)
@@ -315,98 +372,20 @@ class MainWindow(Gtk.ApplicationWindow):
     def graphical_main_calc(self) -> None:
         self._grid_main_calc = Gtk.Grid()
         # button delete all expression
-        button_C: Gtk.Button = self.button_for_main_calc("C", self._grid_main_calc, 0, 0)
+        button_C: Gtk.Button = self.button_for_main_calc("C", self._grid_main_calc, 0, 0, False)
         button_C.connect("clicked", self.clear_entry)
         # entry for input expression
         self.entry_for_expression = Gtk.Entry()
         self.entry_for_expression.set_css_classes(["keybord-base-calc"])
         self._grid_main_calc.attach(self.entry_for_expression, 1, 0, 3, 1)
         # button backspace
-        button_back_space: Gtk.Button = self.button_for_main_calc("<-", self._grid_main_calc, 4, 0)
+        button_back_space: Gtk.Button = self.button_for_main_calc("<-", self._grid_main_calc, 4, 0, False)
         button_back_space.connect("clicked", self.back_space_entry)
 
         # Creating place for button for drag and drop
         self.row_and_column_index_for_cell()
-        """
-        # button smart brackets for expression
-        self.button_for_main_calc("()", self._grid_main_calc, 0, 1)
-        # button open brackets
-        self.button_for_main_calc("(", self._grid_main_calc, 1, 1)
-        # button close brackets
-        self.button_for_main_calc(")", self._grid_main_calc, 2, 1)
-        # button modulo
-        self.button_for_main_calc("mod", self._grid_main_calc, 3, 1)
-        # button Pi
-        self.button_for_main_calc("_Pi", self._grid_main_calc, 4, 1)
-        # button 7
-        self.button_for_main_calc("7", self._grid_main_calc, 0, 2)
-        # button 8
-        self.button_for_main_calc("8", self._grid_main_calc, 1, 2)
-        # button 9
-        self.button_for_main_calc("9", self._grid_main_calc, 2, 2)
-        # button division
-        self.button_for_main_calc("/", self._grid_main_calc, 3, 2)
-        # button sqrt
-        self.button_for_main_calc("sqrt", self._grid_main_calc, 4, 2)
-        # button 4
-        self.button_for_main_calc("4", self._grid_main_calc, 0, 3)
-        # button 5
-        self.button_for_main_calc("5", self._grid_main_calc, 1, 3)
-        # button 6
-        self.button_for_main_calc("6", self._grid_main_calc, 2, 3)
-        # button multiplication
-        self.button_for_main_calc("*", self._grid_main_calc, 3, 3)
-        # button degree
-        self.button_for_main_calc("^", self._grid_main_calc, 4, 3)
-        # button 1
-        self.button_for_main_calc("1", self._grid_main_calc, 0, 4)
-        # button 2
-        self.button_for_main_calc("2", self._grid_main_calc, 1, 4)
-        # button 3
-        self.button_for_main_calc("3", self._grid_main_calc, 2, 4)
-        # button minus
-        self.button_for_main_calc("-", self._grid_main_calc, 3, 4)
-        # button factorial
-        self.button_for_main_calc("!", self._grid_main_calc, 4, 4)
-        # button 0
-        self.button_for_main_calc("0", self._grid_main_calc, 0, 5)
-        # button point
-        self.button_for_main_calc(".", self._grid_main_calc, 1, 5)
-        # button persent
-        self.button_for_main_calc("%", self._grid_main_calc, 2, 5)
-        # button plus
-        self.button_for_main_calc("+", self._grid_main_calc, 3, 5)
-        # button equals
-        self.button_for_main_calc("=", self._grid_main_calc, 4, 5, 1, 2)
-        # button log
-        self.button_for_main_calc("log", self._grid_main_calc, 0, 6)
-        # button ln
-        self.button_for_main_calc("ln", self._grid_main_calc, 1, 6)
-        # button lg
-        self.button_for_main_calc("lg", self._grid_main_calc, 2, 6)
-        # button comma
-        self.button_for_main_calc(",", self._grid_main_calc, 3, 6)
-        # button a
-        self.button_for_main_calc("a", self._grid_main_calc, 0, 7)
-        # button b
-        self.button_for_main_calc("b", self._grid_main_calc, 1, 7)
-        # button c
-        self.button_for_main_calc("c", self._grid_main_calc, 2, 7)
-        # button 0x
-        self.button_for_main_calc("0x", self._grid_main_calc, 3, 7)
-        # button round
-        self.button_for_main_calc("round", self._grid_main_calc, 4, 7)
-        # button d
-        self.button_for_main_calc("d", self._grid_main_calc, 0, 8)
-        # button e
-        self.button_for_main_calc("e", self._grid_main_calc, 1, 8)
-        # button f
-        self.button_for_main_calc("f", self._grid_main_calc, 2, 8)
-        # button 0b
-        self.button_for_main_calc("0b", self._grid_main_calc, 3, 8)
-        # button _E
-        self.button_for_main_calc("_E", self._grid_main_calc, 4, 8)
-        """
+
+
         self.notebook_basic = Gtk.Notebook()
         self.notebook_basic.set_hexpand(True)
         self.notebook_basic.set_vexpand(True)
@@ -476,16 +455,23 @@ class MyApplication(Gtk.Application):
         win = MainWindow(self)
         # Загрузка CSS
         UI.apply_css("""
+
+            .histori-element{
+                background: rgba(0, 0, 0, 0.45);
+            }
+            .histori-element:hover{
+                background: rgba(0, 0, 0, 0);
+            }
             lable.label-button-basic-calc{
-                padding: 40px;
-                margin: -40px;
                 border: none;
             }
             #drop-target-all {
+                padding: 0px;
                 margin: 0px;
                 border: none;
             }
             grid.main_grid {
+                padding: 0px;
                 background-color: rgba(0, 0, 0, 0);
                 color: white;
                 border: none;
@@ -493,6 +479,7 @@ class MyApplication(Gtk.Application):
             
             /* Стили для всего Notebook */
             notebook {
+                padding: 0px;
                 border: none;
                 outline: none;
                 background-color: transparent;
@@ -501,11 +488,13 @@ class MyApplication(Gtk.Application):
 
             /* Стили для вкладок внутри Notebook */
             notebook tab {
+                padding: 0px;
                 background: rgba(0, 0, 0, 0.45);
                 color: white;
                 margin: 5px;
             }
             notebook tab:hover{
+                padding: 0px;
                 color: black;
                 border: none;
                 border-color: black;
@@ -518,10 +507,12 @@ class MyApplication(Gtk.Application):
                 background-blend-mode: overlay; 
             }
             tab{
+                padding: 0px;
                 border: none;
             }
 
             notebook box{
+                padding: 0px;
                 background-color: transparent;
             }
 
@@ -538,6 +529,7 @@ class MyApplication(Gtk.Application):
                 border: none;
             }
             .keybord-base-calc{
+                padding: 0px;
                 margin: 0px;
                 color: white;
                 border-radius: 0px;
@@ -548,6 +540,7 @@ class MyApplication(Gtk.Application):
                 font-size: 24px;
             }
             .drop-target-cell-button{
+                padding: 0px;
                 margin: 0px;
                 color: white;
                 border-radius: 0px;
@@ -558,6 +551,7 @@ class MyApplication(Gtk.Application):
                 font-size: 24px;
             }
             .drop-target-cell-button-box{
+                padding: 0px;
                 margin: 0px;
                 color: white;
                 border-radius: 0px;
@@ -567,27 +561,76 @@ class MyApplication(Gtk.Application):
                 font-size: 24px;
             }
             .keybord-base-calc:hover{
+                padding: 0px;
                 background: rgba(0, 0, 0, 0);
                 color: black;
             }
             
             grid {
                 background: transparent;
+                padding: 0px;
                 border: none;
             }
             notebook > stack {
                 background-color: transparent;
+                padding: 0px;
                 border: none;
             }
-            button.header_element{
+            .header_empty{
+                background: transparent;
+            }
+            .text-button{
+            }
+            /* style css for menu button */
+            .toggle{
+                padding: 10px;
                 border-radius: 60px;
+                background-image: none;
                 color: white;
                 background: transparent;
                 border: none;
                 box-shadow: none;
             }
-            button.header_element:hover{
+            /* style css for content in popover in menu button */
+            .text-button{
+                background: rgba(0, 0, 0, 0.45);
+                border: none;
+                padding: 5px 20px 5px 20px;
+            }
+            .text-button:hover{
+                background: rgba(0, 0, 0, 0.25);
+            }
+            .header_popover_menu_button{
+                padding: 0px;
+                margin: 0px;
+                border: none;
+            }
+            .header_element{
+                border-radius: 60px;
+                background-image: none;
+                color: white;
+                background: transparent;
+                border: none;
+                box-shadow: none;
+            }
+            .header_element:hover{
                 background: black;
+            }
+            /* Стили для popover */
+
+            popover.background {
+                background: transparent;  /* Прозрачный фон для popover */
+            }
+
+            popover arrow {
+                background-color: white;  /* Цвет стрелки совпадает с фоном содержимого */
+                border-bottom-width: 2px;
+            }
+            /* Убираем отступы между кнопками в popover */
+            popover button {
+                margin: 0;
+                padding: 0;
+                border-radius: 0px;
             }
         """)
         UI.window_coloring()
