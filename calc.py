@@ -135,6 +135,10 @@ class CalculateMain:
             print(e)
             return expression
 
+
+
+
+
 class UI:
     colors_background: list[str] = ["#99FF18", "#FFF818", "#FFA918", "#FF6618", "#FF2018", "#FF1493", "#FF18C9", "#CB18FF", "#9118FF", "#5C18FF", "#1F75FE", "#00BFFF", "#18FFE5", "#00FA9A", "#00FF00", "#7FFF00", "#CEFF1D"]
     
@@ -159,70 +163,6 @@ class UI:
             randomNumber_2 = random.choice(UI.colors_background)
         UI.apply_css(f"window{{background: linear-gradient(to bottom right, {randomNumber_1}, {randomNumber_2});}}") # frame{{background: linear-gradient(to bottom right, {randomNumber_1}, {randomNumber_2});}}")
 
-
-
-class CustomTitleBar(Gtk.HeaderBar):
-    def __init__(self):
-        super().__init__()
-        self.set_show_title_buttons(True)
-
-        # Кнопка для смены языка
-        (language_button := Gtk.Button(label="EN")).set_css_classes(["header_element"])  # Используем текстовую метку
-        language_button.connect("clicked", self.on_language_clicked)
-        self.pack_start(language_button)
-        
-
-        # Кнопка для изменения цвета фона
-        (color_fon_button := Gtk.Button(label="Fon")).set_css_classes(["header_element"])  # Используем текстовую метку
-        color_fon_button.connect("clicked", UI.window_coloring)
-        self.pack_start(color_fon_button)
-
-        view_setting_button = Gtk.MenuButton.new()
-        view_setting_button.set_css_classes(["header_element"])
-        view_setting_button.set_child(label_menu_button := Gtk.Label(label = "Veiw"))
-        self.pack_end(view_setting_button)
-        view_setting_button.set_popover(popover_menu_button := Gtk.Popover.new())
-
-        popover_menu_button.set_css_classes(["header_popover_menu_button"])
-
-        popover_menu_button.set_child(grid_header_button := Gtk.Grid())
-        grid_header_button.set_hexpand(True)
-        grid_header_button.set_vexpand(True)
-        grid_header_button.attach(button_general_histori := Gtk.Button(label = "general\nhistori"), 0, 0, 1, 1)
-        grid_header_button.attach(button_local_histori := Gtk.Button(label = "local\nhistori"), 0, 1, 1, 1)
-
-        # Установка отступов в ноль между строками и столбцами
-        grid_header_button.set_row_spacing(0)
-        grid_header_button.set_column_spacing(0)
-        grid_header_button.set_margin_top(0)
-        grid_header_button.set_margin_bottom(0)
-        grid_header_button.set_margin_start(0)
-        grid_header_button.set_margin_end(0)
-
-        button_general_histori.set_hexpand(True)
-        button_general_histori.set_vexpand(True)
-        button_local_histori.set_vexpand(True)
-        button_local_histori.set_hexpand(True)
-
-    def button_settings_view_general_histori(self, button) -> None:
-       pass 
-
-
-    def on_language_clicked(self, button) -> None: pass
-
-    def on_close_clicked(self, button) -> None:
-        Gtk.main_quit()
-
-    def on_minimize_clicked(self, button) -> None:
-        self.get_window().iconify()
-
-    def on_maximize_clicked(self, button) -> None:
-        # Альтернативный способ развертывания окна
-        window = self.get_window()
-        if window.is_maximized():
-            window.unmaximize()
-        else:
-            window.maximize()
 
 
 
@@ -445,6 +385,104 @@ class MainWindow(Gtk.ApplicationWindow):
     def on_drag_prepare(self, drag_source, x, y):
         return Gdk.ContentProvider.new_for_value(drag_source.get_widget().get_label())  # Возвращаем уникальное имя кнопки как данные
 
+main_window_class: MainWindow = None
+
+
+class CustomTitleBar(Gtk.HeaderBar):
+    def __init__(self):
+        super().__init__()
+        self.set_show_title_buttons(True)
+
+        # Кнопка для смены языка
+        (language_button := Gtk.Button(label="EN")).set_css_classes(["header_element"])  # Используем текстовую метку
+        language_button.connect("clicked", self.on_language_clicked)
+        self.pack_start(language_button)
+        
+
+        # Кнопка для изменения цвета фона
+        (color_fon_button := Gtk.Button(label="Fon")).set_css_classes(["header_element"])  # Используем текстовую метку
+        color_fon_button.connect("clicked", UI.window_coloring)
+        self.pack_start(color_fon_button)
+
+        view_setting_button = Gtk.MenuButton.new()
+        view_setting_button.set_css_classes(["header_element"])
+        view_setting_button.set_child(label_menu_button := Gtk.Label(label = "Veiw"))
+        self.pack_end(view_setting_button)
+        view_setting_button.set_popover(popover_menu_button_view_settings := Gtk.Popover.new())
+
+        popover_menu_button_view_settings.set_css_classes(["header_popover_menu_button"])
+
+        popover_menu_button_view_settings.set_child(grid_header_button_view_settings := Gtk.Grid())
+        grid_header_button_view_settings.set_hexpand(True)
+        grid_header_button_view_settings.set_vexpand(True)
+        grid_header_button_view_settings.attach(button_general_histori := Gtk.Button(label = "general\nhistori"), 0, 0, 1, 1)
+        grid_header_button_view_settings.attach(button_local_histori := Gtk.MenuButton.new(), 0, 1, 1, 1)
+        button_local_histori.set_child(Gtk.Label(label = "local\nhistori"))
+        button_general_histori.connect("clicked", self.button_settings_view_general_histori)
+
+        button_local_histori.set_popover(popover_local_histori := Gtk.Popover.new())
+        popover_local_histori.set_child(grid_local_histori := Gtk.Grid())
+        grid_local_histori.set_vexpand(True)
+        grid_local_histori.set_hexpand(True)
+
+
+        popover_local_histori.set_css_classes(["header_popover_menu_button"])
+
+        grid_local_histori.attach(button_local_histori_basic := Gtk.Button(label = "Basic"), 0, 0, 1, 1)
+        button_local_histori_basic.connect("clicked", self.button_settings_view_local_histori_basic)
+        # !!! Must For all tab
+        
+        # Установка отступов в ноль между строками и столбцами
+        grid_header_button_view_settings.set_row_spacing(0)
+        grid_header_button_view_settings.set_column_spacing(0)
+        grid_header_button_view_settings.set_margin_top(0)
+        grid_header_button_view_settings.set_margin_bottom(0)
+        grid_header_button_view_settings.set_margin_start(0)
+        grid_header_button_view_settings.set_margin_end(0)
+
+
+        # Установка отступов в ноль между строками и столбцами
+        grid_local_histori.set_row_spacing(0)
+        grid_local_histori.set_column_spacing(0)
+        grid_local_histori.set_margin_top(0)
+        grid_local_histori.set_margin_bottom(0)
+        grid_local_histori.set_margin_start(0)
+        grid_local_histori.set_margin_end(0)
+
+        button_general_histori.set_hexpand(True)
+        button_general_histori.set_vexpand(True)
+        button_local_histori.set_vexpand(True)
+        button_local_histori.set_hexpand(True)
+
+    def button_settings_view_general_histori(self, button) -> None:
+        global main_window_class
+        # Set the visibility based on the current state
+        main_window_class.general_histori.set_visible(not main_window_class.general_histori.is_visible())
+
+    def button_settings_view_local_histori_basic(self, button) -> None:
+        global main_window_class
+        
+        main_window_class.local_histori_basic.set_visible(not main_window_class.local_histori_basic.is_visible())
+
+
+    def on_language_clicked(self, button) -> None: pass
+
+    def on_close_clicked(self, button) -> None:
+        Gtk.main_quit()
+
+    def on_minimize_clicked(self, button) -> None:
+        self.get_window().iconify()
+
+    def on_maximize_clicked(self, button) -> None:
+        # Альтернативный способ развертывания окна
+        window = self.get_window()
+        if window.is_maximized():
+            window.unmaximize()
+        else:
+            window.maximize()
+
+
+
     
 class MyApplication(Gtk.Application):
     def __init__(self):
@@ -452,7 +490,8 @@ class MyApplication(Gtk.Application):
 
 
     def do_activate(self):
-        win = MainWindow(self)
+        global main_window_class
+        main_window_class = MainWindow(self)
         # Загрузка CSS
         UI.apply_css("""
 
@@ -634,7 +673,7 @@ class MyApplication(Gtk.Application):
             }
         """)
         UI.window_coloring()
-        win.present()
+        main_window_class.present()
 
 app = MyApplication()
 app.run()
