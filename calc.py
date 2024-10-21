@@ -163,6 +163,187 @@ class UI:
             randomNumber_2 = random.choice(UI.colors_background)
         UI.apply_css(f"window{{background: linear-gradient(to bottom right, {randomNumber_1}, {randomNumber_2});}}") # frame{{background: linear-gradient(to bottom right, {randomNumber_1}, {randomNumber_2});}}")
 
+class EmptyElementForHistori(Gtk.Grid):
+    def __init__(self):
+        super().__init__()
+        self.add_css_class("histori-element")
+
+class ScrolledWindowLocalHistoriBasic(Gtk.ScrolledWindow):
+    def __init__(self):
+        super().__init__()
+        self.set_child(EmptyElementForHistori())
+
+
+class GridLocalHistoriBasic(Gtk.Grid):
+    def __init__(self):
+        super().__init__()
+        self.attach(ScrolledWindowLocalHistoriBasic(), 0, 0, 1, 1)
+
+class DragSourceForLabelButtonCalcBasic(Gtk.DragSource):
+    def __init__(self):
+        super().__init__()
+        self.connect("prepare", self.on_drag_prepare)
+
+    def on_drag_prepare(self, drag_source, x, y):
+        return Gdk.ContentProvider.new_for_value(drag_source.get_widget().get_label())  # Возвращаем уникальное имя кнопки как данные
+
+class LabelForButtonCalcBasic(Gtk.Label):
+    def __init__(self, label, css_class):
+        super().__init__(label = label)
+        self.add_css_class(css_class)
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+        self.add_controller(DragSourceForLabelButtonCalcBasic())
+
+class ButtonForCalcBasic(Gtk.Button):
+    def __init__(self, label: str, callback = self.inputing_entry):
+        super().__init__()
+        self.set_child(LabelForButtonCalcBasic(label, "label-button-basic-calc"))
+        self.add_css_class("keybord-base-calc")
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+        self.connect("clicked", self.inputing_entry, label)
+        
+
+    def inputing_entry(self, button, label_button) -> None:
+        self.entry_for_expression.set_text(self.entry_for_expression.get_text() + label_button)
+
+class EntryCalcBasic(Gtk.Entry):
+    def __init__(self):
+        super().__init__()
+        self.add_css_class("keybord-base-calc")
+
+class DropTargetCalcBasic(Gtk.DropTarger):
+    def __init__(self):
+        super().__init__(GObject.TYPE_STRING, Gdk.DragAction.COPY)
+        self.connect("drop", self.on_drop)
+        self.add_css_class("drop-targer-all")
+
+
+class BoxForDropTargetCalcBasic(Gtk.Box):
+    def __init__(self, label_button):
+        super().__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+        self.add_controller(DropTargetCalcBasic())
+        self.add_css_class("drop-target-cell-button-box")
+        self.append(ButtonForCalcBasic(label_button))
+
+class GridCalcBasic(Gtk.Grid):
+    def __init__(self, dict_button: list[str], count_column: int, count_row: int):
+        for row in range(count_row):
+            for column in range(count_column):
+                self.attach(BoxForDropTargetCalcBasic(labels_buttons_defalut[i]), column, row, 1, 1)
+                i += 1
+
+class NotebookCalc(Gtk.Notebook):
+    def __init__(self):
+        super().__init__()
+        self.set_hexpand(True)
+        self.set_vexpand(True)
+        self.append_page(LabelForButtonCalcBasic(label, "calc_mods")
+
+class GridCalcBasic(Gtk.Grid):
+    def __init__(self):
+        super().__init__()
+        self.attach(GridLocalHistoriBasic(), 0, 0, 3, 5)
+
+        self.button_for_main_calc("C", 0, 3, False, self.clear_entry)
+        
+        self.attach(EntryCalcBasic, 1, 0, 3, 1)
+
+        self.button_for_main_calc("<-", 4, 3, False, self.back_spase_entry)
+
+        self.row_and_column_index_for_cell()
+
+        self.attach(NotebookCalc, 0 , 9, 5, 4)
+
+    def button_for_calc_basic(self, label: str, column: int, row: int, callback = None) -> Gtk.Button:
+        self.attach(ButtonForCalcBasic(label, callback if callback else label), column, row, 1, 1)
+
+    def row_and_column_index_for_cell(self, count_row: int = 5, count_column: int = 5, start_column: int = 0, start_row: int = 4) -> None:
+        labels_buttons_defalut: list[str] = ["()", "(", ")", "mod", "_PI", "7", "8", "9", ":", "sqrt", "4", "5", "6", "*", "^", "1", "2", "3", "-", "!", "0", ".", "%", "+", "="]
+        i: int = 0
+        for row in range(start_row, count_row + start_row):
+            for column in range(start_column, count_column + start_column):
+                self.attach(BoxForDropTargetCalcBasic(labels_buttons_defalut[i]), column, row, 1, 1)
+                i += 1
+
+
+    def _grid_f_basic_calc_others(self) -> None:
+        for i, (column, row) in {"round": [0, 0], "mod": [1, 0], "0x": [2, 0], "0b": [3, 0], "0": [4, 0]}.items():
+            self.button_for_main_calc(i, self._grid_basic_calc_others, column, row)
+
+    def _grid_f_basic_calc_consts(self) -> None:
+        for i, (column, row) in {"_PI": [0, 0], "_E": [1, 0]}.items():
+            self.button_for_main_calc(i, self._grid_basic_calc_consts, column, row)
+
+
+    def _grid_f_basic_calc_operators(self) -> None:
+        for i, (column, row) in {"+": [0, 0], "-": [1, 0], ":": [2, 0], "*": [3, 0], "^": [4, 0], "!": [0, 1], "sqrt": [1, 1], "ln": [2, 1], "log": [3, 1], "lg": [4, 1]}.items():
+            self.button_for_main_calc(i, self._grid_basic_calc_operators, column, row)
+
+    def _grid_f_basic_calc_digit_16(self) -> None:
+        for i, (column, row) in {"A": [0, 0], "B": [1, 0], "C": [2, 0], "D": [0, 1], "E": [1, 1], "F": [2, 1]}.items():
+            self.button_for_main_calc(i, self._grid_basic_calc_digit_16, column, row)
+
+    def _grid_f_basic_calc_digit_10(self) -> None:
+        for i, (column, row) in {"1": [0, 0], "2": [1, 0], "3": [2, 0], "4": [3, 0], "5": [4, 0], "6": [0, 1], "7": [1, 1], "8": [2, 1], "9": [3, 1], "0": [4, 1]}.items():
+            self.button_for_main_calc(i, self._grid_basic_calc_digit_10, column, row)
+    
+
+    def create_tab(self, notebook, tab_title, grid_information: Gtk.Grid):
+        # Создаем фрейм для вкладки
+        (tab_label := Gtk.Label(label=tab_title)).set_css_classes(["calc_mods"]) 
+        tab_label.set_hexpand(True)
+        tab_label.set_vexpand(True)
+        # Добавляем вкладку в контейнер
+        notebook.append_page(grid_information, tab_label)
+
+    def button_for_main_calc(self, label: str, grid: Gtk.Grid, column: int, row: int, connect: bool = True, width: int = 1, height: int = 1) -> Gtk.Button:
+        # Создаем новую кнопку с тем же именем и добавляем в целевую ячейку
+        label_button: Gtk.Label = Gtk.Label.new(label)
+        label_button.set_css_classes(["label-button-basic-calc"])
+        label_button.set_hexpand(True)
+        label_button.set_vexpand(True)
+        button = Gtk.Button()
+        button.set_child(label_button)
+        button.set_css_classes(["keybord-base-calc"])
+        grid.attach(button, column, row, width, height)
+        if connect: button.connect("clicked", self.inputing_entry, label)
+        # Настройка DragSource для каждой кнопки
+        drag_source = Gtk.DragSource()
+        drag_source.connect("prepare", self.on_drag_prepare)
+        label_button.add_controller(drag_source)
+        button.set_hexpand(True)
+        button.set_vexpand(True)
+        return button
+
+
+    def graphical_main_calc(self) -> None:
+
+
+        self._grid_basic_calc_digit_10 = Gtk.Grid()
+        self._grid_f_basic_calc_digit_10()
+        self._grid_basic_calc_operators = Gtk.Grid()
+        self._grid_f_basic_calc_operators()
+        self._grid_basic_calc_consts = Gtk.Grid()
+        self._grid_f_basic_calc_consts()
+        self._grid_basic_calc_others = Gtk.Grid()
+        self._grid_f_basic_calc_others()
+
+        self._grid_basic_calc_digit_16 = Gtk.Grid()
+        self._grid_f_basic_calc_digit_16()
+
+        self.create_tab(self.notebook_basic, "digits 10", self._grid_basic_calc_digit_10)
+
+        self.create_tab(self.notebook_basic, "digits 16", self._grid_basic_calc_digit_16)
+
+        self.create_tab(self.notebook_basic, "operators", self._grid_basic_calc_operators)
+
+        self.create_tab(self.notebook_basic, "others", self._grid_basic_calc_others)
+
+        self.create_tab(self.notebook_basic, "consts", self._grid_basic_calc_consts)
 
 
 
@@ -269,25 +450,25 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add_basic_main_button(label, cell)
         
 
-    def add_basic_main_button(self, label: str, cell: Gtk.Box()) -> None:
-        # Создаем новую кнопку с тем же именем и добавляем в целевую ячейку
-        label_button: Gtk.Label = Gtk.Label.new(label)
+    def add_basic_main_button(self, label: str, cell: gtk.box()) -> none:
+        # создаем новую кнопку с тем же именем и добавляем в целевую ячейку
+        label_button: gtk.label = gtk.label.new(label)
         label_button.set_css_classes(["label-button-basic-calc"])
-        label_button.set_hexpand(True)
-        label_button.set_vexpand(True)
-        new_button = Gtk.Button()
+        label_button.set_hexpand(true)
+        label_button.set_vexpand(true)
+        new_button = gtk.button()
         new_button.set_child(label_button)
 
-        new_button.set_hexpand(True)
-        new_button.set_vexpand(True)
+        new_button.set_hexpand(true)
+        new_button.set_vexpand(true)
 
         new_button.connect("clicked", self.inputing_entry, label)
 
         new_button.set_css_classes(["keybord-base-calc"])
-        cell.append(new_button)  # Добавляем кнопку в целевую ячейку
+        cell.append(new_button)  # добавляем кнопку в целевую ячейку
 
-        # Настройка DragSource для каждой кнопки
-        drag_source = Gtk.DragSource()
+        # настройка dragsource для каждой кнопки
+        drag_source = gtk.dragsource()
         drag_source.connect("prepare", self.on_drag_prepare)
         label_button.add_controller(drag_source)
 
@@ -311,6 +492,9 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def graphical_main_calc(self) -> None:
         self._grid_main_calc = Gtk.Grid()
+        
+        self.grid_local_histori_basic = GridLocalHistoriBasic()
+        self._grid_main_calc.attach(self.grid_local_histori_basic, 0, -3, 5, 3)
         # button delete all expression
         button_C: Gtk.Button = self.button_for_main_calc("C", self._grid_main_calc, 0, 0, False)
         button_C.connect("clicked", self.clear_entry)
@@ -405,23 +589,26 @@ class CustomTitleBar(Gtk.HeaderBar):
         self.pack_start(color_fon_button)
 
         view_setting_button = Gtk.MenuButton.new()
-        view_setting_button.set_css_classes(["header_element"])
+        view_setting_button.add_css_class("header_element")
         view_setting_button.set_child(label_menu_button := Gtk.Label(label = "Veiw"))
         self.pack_end(view_setting_button)
         view_setting_button.set_popover(popover_menu_button_view_settings := Gtk.Popover.new())
 
         popover_menu_button_view_settings.set_css_classes(["header_popover_menu_button"])
+        popover_menu_button_view_settings.set_position(Gtk.PositionType.BOTTOM)
 
         popover_menu_button_view_settings.set_child(grid_header_button_view_settings := Gtk.Grid())
         grid_header_button_view_settings.set_hexpand(True)
         grid_header_button_view_settings.set_vexpand(True)
         grid_header_button_view_settings.attach(button_general_histori := Gtk.Button(label = "general\nhistori"), 0, 0, 1, 1)
         grid_header_button_view_settings.attach(button_local_histori := Gtk.MenuButton.new(), 0, 1, 1, 1)
+        button_local_histori.add_css_class("in_popover")
         button_local_histori.set_child(Gtk.Label(label = "local\nhistori"))
         button_general_histori.connect("clicked", self.button_settings_view_general_histori)
 
         button_local_histori.set_popover(popover_local_histori := Gtk.Popover.new())
         popover_local_histori.set_child(grid_local_histori := Gtk.Grid())
+        popover_local_histori.set_position(Gtk.PositionType.LEFT)
         grid_local_histori.set_vexpand(True)
         grid_local_histori.set_hexpand(True)
 
@@ -430,7 +617,14 @@ class CustomTitleBar(Gtk.HeaderBar):
 
         grid_local_histori.attach(button_local_histori_basic := Gtk.Button(label = "Basic"), 0, 0, 1, 1)
         button_local_histori_basic.connect("clicked", self.button_settings_view_local_histori_basic)
-        # !!! Must For all tab
+
+
+        grid_local_histori.attach(button_local_histori_tab_2 := Gtk.Button(label = "Tab2"), 0, 1, 1, 1)
+        button_local_histori_basic.connect("clicked", self.button_settings_view_local_histori_tab_2)
+
+        grid_local_histori.attach(button_local_histori_tab_3 := Gtk.Button(label = "Tab3"), 0, 2, 1, 1)
+        button_local_histori_basic.connect("clicked", self.button_settings_view_local_histori_tab_3)
+        # !!! Must been For all tab
         
         # Установка отступов в ноль между строками и столбцами
         grid_header_button_view_settings.set_row_spacing(0)
@@ -462,8 +656,13 @@ class CustomTitleBar(Gtk.HeaderBar):
     def button_settings_view_local_histori_basic(self, button) -> None:
         global main_window_class
         
-        main_window_class.local_histori_basic.set_visible(not main_window_class.local_histori_basic.is_visible())
+        main_window_class.grid_local_histori_basic.set_visible(not main_window_class.grid_local_histori_basic.is_visible())
+    
+    def button_settings_view_local_histori_tab_2(self, button) -> None:
+        pass
 
+    def button_settings_view_local_histori_tab_3(self, button) -> None:
+        pass
 
     def on_language_clicked(self, button) -> None: pass
 
@@ -504,7 +703,7 @@ class MyApplication(Gtk.Application):
             lable.label-button-basic-calc{
                 border: none;
             }
-            #drop-target-all {
+            .drop-target-all {
                 padding: 0px;
                 margin: 0px;
                 border: none;
@@ -622,8 +821,6 @@ class MyApplication(Gtk.Application):
             }
             /* style css for menu button */
             .toggle{
-                padding: 10px;
-                border-radius: 60px;
                 background-image: none;
                 color: white;
                 background: transparent;
@@ -670,6 +867,25 @@ class MyApplication(Gtk.Application):
                 margin: 0;
                 padding: 0;
                 border-radius: 0px;
+            }
+            menubutton.header_element{
+                border-radius: 60px;
+                background-image: none;
+                color: white;
+                background: transparent;
+                border: none;
+                box-shadow: none;
+            }
+            menubutton.in_popover{
+                background: rgba(0, 0, 0, 0.45);
+                background-image: none;
+                border: none;
+                border-radius: 0px;
+                margin: 0px;
+                padding: 5px 20px 5px 20px;
+            }
+            menubutton.in_popover:hover{
+                background: rgba(0, 0, 0, 0.25);
             }
         """)
         UI.window_coloring()
