@@ -1,0 +1,193 @@
+.histori-element{
+	background: rgba(0, 0, 0, 0.45);
+}
+.histori-element:hover{
+	background: rgba(0, 0, 0, 0);
+}
+lable.keybord-base-calc{
+	border: none;
+}
+.drop-target-all {
+	padding: 0px;
+	margin: 0px;
+	border: none;
+}
+grid.main_grid {
+	padding: 0px;
+	background-color: rgba(0, 0, 0, 0);
+	color: white;
+	border: none;
+}
+
+/* Стили для всего Notebook */
+notebook {
+	padding: 0px;
+	border: none;
+	outline: none;
+	background-color: transparent;
+	background: transparent;
+}
+
+/* Стили для вкладок внутри Notebook */
+notebook tab {
+	padding: 0px;
+	background: rgba(0, 0, 0, 0.45);
+	color: white;
+	margin: 5px;
+}
+notebook tab:hover{
+	padding: 0px;
+	color: black;
+	border: none;
+	border-color: black;
+	background: rgba(0, 0, 0, 0);
+}
+.titlebar { 
+	background-color: rgba(0,0,0,0.45); 
+	color: rgb(255,255,255); 
+	background-image: none; 
+	background-blend-mode: overlay; 
+}
+tab{
+	padding: 0px;
+	border: none;
+}
+
+notebook box{
+	padding: 0px;
+	background-color: transparent;
+}
+
+notebook header {
+	border: none;
+	background: transparent;
+	margin: 0px;
+	padding: 0px;
+}
+
+
+headerbar{
+	background-color: transparent;
+	border: none;
+}
+button.keybord-base-calc, entry.keybord-base-calc{
+	padding: 0px;
+	margin: 0px;
+	color: white;
+	border-radius: 0px;
+	background: rgba(0, 0, 0, 0.45);
+	border: 3px solid rgba(0,0,0,0);
+	text-shadow: none;
+	box-shadow: none;
+	font-size: 24px;
+}
+.drop-target-cell-button{
+	padding: 0px;
+	margin: 0px;
+	color: white;
+	border-radius: 0px;
+	background: rgba(0, 0, 0, 0.45);
+	border: 3px solid rgba(0,0,0,0);
+	text-shadow: none;
+	box-shadow: none;
+	font-size: 24px;
+}
+.drop-target-cell-button-box{
+	padding: 0px;
+	margin: 0px;
+	color: white;
+	border-radius: 0px;
+	border: none;
+	text-shadow: none;
+	box-shadow: none;
+	font-size: 24px;
+}
+button.keybord-base-calc:hover, entry.keybord-base-calc:hover{
+	padding: 0px;
+	background: rgba(0, 0, 0, 0);
+	color: black;
+}
+
+grid {
+	background: transparent;
+	padding: 0px;
+	border: none;
+}
+notebook > stack {
+	background-color: transparent;
+	padding: 0px;
+	border: none;
+}
+.header_empty{
+	background: transparent;
+}
+.text-button{
+}
+/* style css for menu button */
+.toggle{
+	background-image: none;
+	color: white;
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+/* style css for content in popover in menu button */
+.text-button{
+	background: rgba(0, 0, 0, 0.45);
+	border: none;
+	padding: 5px 20px 5px 20px;
+}
+.text-button:hover{
+	background: rgba(0, 0, 0, 0.25);
+}
+.header_popover_menu_button{
+	padding: 0px;
+	margin: 0px;
+	border: none;
+}
+.header_element{
+	border-radius: 60px;
+	background-image: none;
+	color: white;
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+.header_element:hover{
+	background: black;
+}
+/* Стили для popover */
+
+popover.background {
+	background: transparent;  /* Прозрачный фон для popover */
+}
+
+popover arrow {
+	background-color: white;  /* Цвет стрелки совпадает с фоном содержимого */
+	border-bottom-width: 2px;
+}
+/* Убираем отступы между кнопками в popover */
+popover button {
+	margin: 0;
+	padding: 0;
+	border-radius: 0px;
+}
+menubutton.header_element{
+	border-radius: 60px;
+	background-image: none;
+	color: white;
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+menubutton.in_popover{
+	background: rgba(0, 0, 0, 0.45);
+	background-image: none;
+	border: none;
+	border-radius: 0px;
+	margin: 0px;
+	padding: 5px 20px 5px 20px;
+}
+menubutton.in_popover:hover{
+	background: rgba(0, 0, 0, 0.25);
+}
