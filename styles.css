@@ -116,11 +116,6 @@ notebook > stack {
 	padding: 0px;
 	border: none;
 }
-.header_empty{
-	background: transparent;
-}
-.text-button{
-}
 /* style css for menu button */
 .toggle{
 	background-image: none;
@@ -178,6 +173,7 @@ menubutton.header_element{
 	color: white;
 	background: transparent;
 	border: none;
+	padding: 0px;
 	box-shadow: none;
 }
 menubutton.in_popover{

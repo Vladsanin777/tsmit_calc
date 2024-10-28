@@ -254,17 +254,20 @@ class BoxForDropTargetCalcBasic(Gtk.Box):
         self.add_css_class("drop-target-cell-button-box")
         self.append(ButtonForCalcBasic(label_button, "keybord-base-calc"))
 
+class BuildingButtonInGrid():
+    def __init__(self, list_button: list[list[str]], grid: Gtk.Grid, row: int = 0):
+        for row_labels_for_button in list_button:
+            column: int = 0
+            for one_button in row_labels_for_button:
+                grid.attach(BoxForDropTargetCalcBasic(one_button, False), column, row, 1, 1)
+                column += 1
+            row += 1
+
 class GridCalcBasicKeybord(Gtk.Grid):
     def __init__(self, list_button: list[list[str]]):
         super().__init__()
-        column: int = 0
-        row: int = 0
-        for row_labels_for_button in list_button:
-            for one_button in row_labels_for_button:
-                self.attach(BoxForDropTargetCalcBasic(one_button, False), column, row, 1, 1)
-                column += 1
-            column = 0
-            row += 1
+        BuildingButtonInGrid(list_button, self)
+        
 
 class NotebookCalcBasic(Gtk.Notebook):
     def __init__(self):
@@ -285,20 +288,22 @@ class GridCalcBasic(Gtk.Grid):
 
         add_local_histori_basic = box_local_histori_basic.add_histori
 
-        self.button_for_calc_basic("C", 0, 3, self.clear_entry)
+        self.button_for_calc_basic("L", 0, 3, self.clear_entry)
         
         self.attach(entry_calc_basic := EntryCalcBasic(), 1, 3, 3, 1)
 
         self.button_for_calc_basic("<-", 4, 3, self.back_space_entry)
+        
+        BuildingButtonInGrid([["()", "(", ")", "mod", "_PI"], ["7", "8", "9", ":", "sqrt"], ["4", "5", "6", "*", "^"], ["1", "2", "3", "-", "!"], ["0", ".", "%", "+", "_E"]], self, 4)
 
-        self.row_and_column_index_for_cell()
+        self.attach(ButtonForCalcBasic("="), 0, 9, 5, 1)
 
-        self.attach(NotebookCalcBasic(), 0 , 9, 5, 4)
+        self.attach(NotebookCalcBasic(), 0 , 10, 5, 4)
         
         self.set_hexpand(True)
         self.set_vexpand(True)
 
-    def clear_entry(self, button) -> None:
+    def clear_entry(self, button, label) -> None:
         global entry_calc_basic
         entry_calc_basic.set_text("")
 
@@ -308,15 +313,6 @@ class GridCalcBasic(Gtk.Grid):
 
     def button_for_calc_basic(self, label: str, column: int, row: int, callback = None) -> Gtk.Button:
         self.attach(ButtonForCalcBasic(label, "keybord-base-calc", callback if callback else label), column, row, 1, 1)
-
-    def row_and_column_index_for_cell(self, count_row: int = 5, count_column: int = 5, start_column: int = 0, start_row: int = 4) -> None:
-        labels_buttons_defalut: list[str] = ["()", "(", ")", "mod", "_PI", "7", "8", "9", ":", "sqrt", "4", "5", "6", "*", "^", "1", "2", "3", "-", "!", "0", ".", "%", "+", "="]
-        i: int = 0
-        for row in range(start_row, count_row + start_row):
-            for column in range(start_column, count_column + start_column):
-                self.attach(BoxForDropTargetCalcBasic(labels_buttons_defalut[i]), column, row, 1, 1)
-                i += 1
-
 
 class NotebookMain(Gtk.Notebook):
     def __init__(self):
@@ -349,6 +345,10 @@ class MainWindow(Gtk.ApplicationWindow):
 ###############################################################
 
 #TitleBar
+
+class LebalMenuButtonTitlebar(Gtk.Label):
+    def __init__(self, label):
+        super().__init__(label = label)
 
 class ButtonTitleBar(Gtk.Button):
     def __init__(self, label, callback, css_class: str = "header_element"):
@@ -388,7 +388,7 @@ class MenuButtonLocalHistoriTitleBar(Gtk.MenuButton):
         super().__init__()
         self.set_popover(popover := PopoverLocalHistoriTitleBar())
         popover.on_button()
-        self.set_child(Gtk.Label(label = label))
+        self.set_child(LebalMenuButtonTitlebar("local\nhistori"))
         self.add_css_class("in_popover")
 
 class GridMainTitleBar(Gtk.Grid):
