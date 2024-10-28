@@ -90,7 +90,6 @@ button.keybord-base-calc, entry.keybord-base-calc{
 	border: 3px solid rgba(0,0,0,0);
 	text-shadow: none;
 	box-shadow: none;
-	font-size: 24px;
 }
 .drop-target-cell-button-box{
 	padding: 0px;
@@ -100,7 +99,6 @@ button.keybord-base-calc, entry.keybord-base-calc{
 	border: none;
 	text-shadow: none;
 	box-shadow: none;
-	font-size: 24px;
 }
 button.keybord-base-calc:hover, entry.keybord-base-calc:hover{
 	padding: 0px;
@@ -144,10 +142,12 @@ notebook > stack {
 	padding: 0px;
 	margin: 0px;
 	border: none;
+	background: transparent;
 }
 .header_element{
 	border-radius: 60px;
 	background-image: none;
+	padding: 0px 10px;
 	color: white;
 	background: transparent;
 	border: none;

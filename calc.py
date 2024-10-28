@@ -378,19 +378,24 @@ class GridLocalHistoriTitleBar(Gtk.Grid):
 class PopoverLocalHistoriTitleBar(Gtk.Popover):
     def __init__(self):
         super().__init__()
-        self.add_css_class("header_popover_menu_button")
-        self.set_position(Gtk.PositionType.LEFT)
         self.set_child(GridLocalHistoriTitleBar())
+        self.set_css_classes(["header_popover_menu_button"])
+    def on_button(self):
+        self.set_position(Gtk.PositionType.LEFT)
 
 class MenuButtonLocalHistoriTitleBar(Gtk.MenuButton):
     def __init__(self, label):
-        super().__init__(label = label)
+        super().__init__()
+        self.set_popover(popover := PopoverLocalHistoriTitleBar())
+        popover.on_button()
+        self.set_child(Gtk.Label(label = label))
         self.add_css_class("in_popover")
-        self.set_popover(PopoverLocalHistoriTitleBar())
 
 class GridMainTitleBar(Gtk.Grid):
     def __init__(self):
         super().__init__()
+        self.set_vexpand(True)
+        self.set_hexpand(True)
         self.attach(ButtonTitleBar("general\nhistori", self.button_settings_view_general_histori, None), 0, 0, 1, 1)
         self.attach(MenuButtonLocalHistoriTitleBar("local\nhistori"), 0, 1, 1, 1)
     
@@ -403,15 +408,16 @@ class GridMainTitleBar(Gtk.Grid):
 class PopoverMainTitleBar(Gtk.Popover):
     def __init__(self):
         super().__init__()
-        self.add_css_class("header_popover_menu_button")
         self.set_position(Gtk.PositionType.BOTTOM)
         self.set_child(GridMainTitleBar())
+        self.set_css_classes(["header_popover_menu_button"])
 
 class MenuButtonMainTitleBar(Gtk.MenuButton):
     def __init__(self, label: str):
-        super().__init__(label = label)
-        self.add_css_class("header_element")
+        super().__init__()
         self.set_popover(PopoverMainTitleBar())
+        self.set_child(Gtk.Label(label = "View"))
+        self.add_css_class("header_element")
 
 
 class CustomTitleBar(Gtk.HeaderBar):
@@ -427,98 +433,7 @@ class CustomTitleBar(Gtk.HeaderBar):
 
         self.pack_end(MenuButtonMainTitleBar("Veiw"))
 
-        view_setting_button = Gtk.MenuButton.new()
-        view_setting_button.add_css_class("header_element")
-        view_setting_button.set_child(label_menu_button := Gtk.Label(label = "Veiw"))
-        self.pack_end(view_setting_button)
-        view_setting_button.set_popover(popover_menu_button_view_settings := Gtk.Popover.new())
-
-        popover_menu_button_view_settings.set_css_classes(["header_popover_menu_button"])
-        popover_menu_button_view_settings.set_position(Gtk.PositionType.BOTTOM)
-
-        popover_menu_button_view_settings.set_child(grid_header_button_view_settings := Gtk.Grid())
-        grid_header_button_view_settings.set_hexpand(True)
-        grid_header_button_view_settings.set_vexpand(True)
-        grid_header_button_view_settings.attach(button_general_histori := Gtk.Button(label = "general\nhistori"), 0, 0, 1, 1)
-        grid_header_button_view_settings.attach(button_local_histori := Gtk.MenuButton.new(), 0, 1, 1, 1)
-        button_local_histori.add_css_class("in_popover")
-        button_local_histori.set_child(Gtk.Label(label = "local\nhistori"))
-        button_general_histori.connect("clicked", self.button_settings_view_general_histori)
-
-        button_local_histori.set_popover(popover_local_histori := Gtk.Popover.new())
-        popover_local_histori.set_child(grid_local_histori := Gtk.Grid())
-        popover_local_histori.set_position(Gtk.PositionType.LEFT)
-        grid_local_histori.set_vexpand(True)
-        grid_local_histori.set_hexpand(True)
-
-
-        popover_local_histori.set_css_classes(["header_popover_menu_button"])
-
-        grid_local_histori.attach(button_local_histori_basic := Gtk.Button(label = "Basic"), 0, 0, 1, 1)
-        button_local_histori_basic.connect("clicked", self.button_settings_view_local_histori_basic)
-
-
-        grid_local_histori.attach(button_local_histori_tab_2 := Gtk.Button(label = "Tab2"), 0, 1, 1, 1)
-        button_local_histori_basic.connect("clicked", self.button_settings_view_local_histori_tab_2)
-
-        grid_local_histori.attach(button_local_histori_tab_3 := Gtk.Button(label = "Tab3"), 0, 2, 1, 1)
-        button_local_histori_basic.connect("clicked", self.button_settings_view_local_histori_tab_3)
-        # !!! Must been For all tab
-        
-        # Установка отступов в ноль между строками и столбцами
-        grid_header_button_view_settings.set_row_spacing(0)
-        grid_header_button_view_settings.set_column_spacing(0)
-        grid_header_button_view_settings.set_margin_top(0)
-        grid_header_button_view_settings.set_margin_bottom(0)
-        grid_header_button_view_settings.set_margin_start(0)
-        grid_header_button_view_settings.set_margin_end(0)
-
-
-        # Установка отступов в ноль между строками и столбцами
-        grid_local_histori.set_row_spacing(0)
-        grid_local_histori.set_column_spacing(0)
-        grid_local_histori.set_margin_top(0)
-        grid_local_histori.set_margin_bottom(0)
-        grid_local_histori.set_margin_start(0)
-        grid_local_histori.set_margin_end(0)
-
-        button_general_histori.set_hexpand(True)
-        button_general_histori.set_vexpand(True)
-        button_local_histori.set_vexpand(True)
-        button_local_histori.set_hexpand(True)
-
-    def button_settings_view_general_histori(self, button) -> None:
-        global box_general_histori
-        # Set the visibility based on the current state
-        box_general_histori.set_visible(not box_general_histori.is_visible())
-
-    def button_settings_view_local_histori_basic(self, button) -> None:
-        global box_local_histori_basic
-        box_local_histori_basic.set_visible(not box_local_histori_basic.is_visible())
-    
-    def button_settings_view_local_histori_tab_2(self, button) -> None:
-        pass
-
-    def button_settings_view_local_histori_tab_3(self, button) -> None:
-        pass
-
     def on_language_clicked(self, button) -> None: pass
-
-    def on_close_clicked(self, button) -> None:
-        Gtk.main_quit()
-
-    def on_minimize_clicked(self, button) -> None:
-        self.get_window().iconify()
-
-    def on_maximize_clicked(self, button) -> None:
-        # Альтернативный способ развертывания окна
-        window = self.get_window()
-        if window.is_maximized():
-            window.unmaximize()
-        else:
-            window.maximize()
-
-
 
     
 class MyApplication(Gtk.Application):
