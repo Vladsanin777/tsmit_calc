@@ -163,13 +163,24 @@ class UI:
             randomNumber_2 = random.choice(UI.colors_background)
         UI.apply_css(f"window{{background: linear-gradient(to bottom right, {randomNumber_1}, {randomNumber_2});}}") # frame{{background: linear-gradient(to bottom right, {randomNumber_1}, {randomNumber_2});}}")
 
-box_general_histori = None
-add_general_histori = None
-box_local_histori_basic = None
-add_local_histori_basic = None
-entry_calc_basic = None
+scrolled_window_general_histori: Gtk.ScrolledWindow = Gtk.ScrolledWindow()
+add_general_histori: Gtk.Box = Gtk.Box()
+scrolled_window_local_histori_basic: Gtk.ScrolledWindow = Gtk.ScrolledWindow()
+add_local_histori_basic: Gtk.Box = Gtk.Box()
+entry_calc_basic: Gtk.Entry = Gtk.Entry()
 
-class EmptyElementForHistori(Gtk.Grid):
+
+class LogicCalcBasic():
+    @staticmethod
+    def button__ALL():
+        global add_general_histori, add_local_histori_basic, result_calc_basic, entry_calc_basic
+        if (text_entry := entry_calc_basic.get_text().replace("_ALL", "")) != "":
+            print(text_entry)
+            add_general_histori.append(BoxHistoriElement(text_entry, str(56)))
+            add_local_histori_basic.append(BoxHistoriElement(text_entry, str(56)))
+        entry_calc_basic.set_text("")
+
+class EmptyElementForHistori(Gtk.Box):
     def __init__(self):
         super().__init__()
 
@@ -177,22 +188,18 @@ class EmptyElementForHistori(Gtk.Grid):
         self.set_vexpand(True)
         self.add_css_class("histori-element")
 
+class BoxForElementsHistori(Gtk.Box):
+    def __init__(self):
+        super().__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
+        self.append(EmptyElementForHistori())
+
 class ScrolledWindowHistori(Gtk.ScrolledWindow):
     def __init__(self):
         super().__init__()
-        self.set_child(EmptyElementForHistori())
-
-
-class BoxHistori(Gtk.Box):
-    add_histori: Gtk.ScrolledWindow = None
-    def __init__(self):
-        super().__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
-        self.add_histori = ScrolledWindowHistori()
-        self.append(self.add_histori)
+        self.add_histori = BoxForElementsHistori()
+        self.set_child(self.add_histori)
         self.set_hexpand(True)
         self.set_vexpand(True)
-        
-
 
 class DragSourceForLabelButtonCalcBasic(Gtk.DragSource):
     def __init__(self):
@@ -222,12 +229,26 @@ class ButtonForCalcBasic(Gtk.Button):
     def inputing_entry(self, button: Gtk.Button, label_button: str) -> None:
         global entry_calc_basic
         position_cursor: int = entry_calc_basic.get_position()
-        entry_calc_basic.insert_text(position_cursor, label_button)
+        entry_calc_basic.insert_text(label_button, position_cursor)
+        entry_calc_basic.set_position(position_cursor + len(label_button))
+
+class BoxHistoriElement(Gtk.Box):
+    def __init__(self, expression: str, result: str):
+        super().__init__(spacing=0, orientation=Gtk.Orientation.HORIZONTAL)
+        self.append(LabelForButtonCalcBasic(expression, "histori-element"))
+        self.append(LabelForButtonCalcBasic("=", "histori-element"))
+        self.append(LabelForButtonCalcBasic(result, "histori-element"))
 
 class EntryCalcBasic(Gtk.Entry):
     def __init__(self):
         super().__init__()
         self.add_css_class("keybord-base-calc")
+        self.connect("changed", self.on_entry_changed)
+    def on_entry_changed(self, entry):
+        if (text_entry := entry.get_text()):
+            if "_ALL" in text_entry:
+                LogicCalcBasic.button__ALL() 
+
 
 class DropTargetCalcBasic(Gtk.DropTarget):
     def __init__(self):
@@ -260,7 +281,7 @@ class BuildingButtonInGrid():
         for row_labels_for_button in list_button:
             column: int = 0
             for one_button in row_labels_for_button:
-                grid.attach(BoxForDropTargetCalcBasic(one_button, False), column, row, 1, 1)
+                grid.attach(BoxForDropTargetCalcBasic(one_button, True), column, row, 1, 1)
                 column += 1
             row += 1
 
@@ -283,13 +304,13 @@ class NotebookCalcBasic(Gtk.Notebook):
 
 class GridCalcBasic(Gtk.Grid):
     def __init__(self):
-        global entry_calc_basic, box_local_histori_basic, add_lacal_histori_basic
+        global entry_calc_basic, box_local_histori_basic, add_local_histori_basic
         super().__init__()
-        self.attach(box_local_histori_basic := BoxHistori(), 0, 0, 5, 3)
+        self.attach(box_local_histori_basic := ScrolledWindowHistori(), 0, 0, 5, 3)
 
         add_local_histori_basic = box_local_histori_basic.add_histori
 
-        self.button_for_calc_basic("_ALL", 0, 3, self.clear_entry)
+        self.button_for_calc_basic("_ALL", 0, 3, LogicCalcBasic.button__ALL())
         
         self.attach(entry_calc_basic := EntryCalcBasic(), 1, 3, 3, 1)
 
@@ -303,10 +324,6 @@ class GridCalcBasic(Gtk.Grid):
         
         self.set_hexpand(True)
         self.set_vexpand(True)
-
-    def clear_entry(self, button, label) -> None:
-        global entry_calc_basic
-        entry_calc_basic.set_text("")
 
     def back_space_entry(self, button) -> None:
         global entry_calc_basic
@@ -330,8 +347,8 @@ class GridMain(Gtk.Grid):
         super().__init__()
         global box_general_histori, add_general_histori
         self.add_css_class("main_grid")
-        self.attach(box_general_histori := BoxHistori(), 0, 0, 1, 4)
-        add_general_histori = box_general_histori.add_histori
+        self.attach(scrolled_window_general_histori := ScrolledWindowHistori(), 0, 0, 1, 4)
+        add_general_histori = scrolled_window_general_histori.add_histori
         self.attach(NotebookMain(), 0, 4, 1, 10)
 
 
