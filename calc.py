@@ -221,7 +221,8 @@ class ButtonForCalcBasic(Gtk.Button):
         self.connect("clicked", callback, label)
     def inputing_entry(self, button: Gtk.Button, label_button: str) -> None:
         global entry_calc_basic
-        entry_calc_basic.set_text(entry_calc_basic.get_text() + label_button)    
+        position_cursor: int = entry_calc_basic.get_position()
+        entry_calc_basic.insert_text(position_cursor, label_button)
 
 class EntryCalcBasic(Gtk.Entry):
     def __init__(self):
@@ -288,11 +289,11 @@ class GridCalcBasic(Gtk.Grid):
 
         add_local_histori_basic = box_local_histori_basic.add_histori
 
-        self.button_for_calc_basic("L", 0, 3, self.clear_entry)
+        self.button_for_calc_basic("_ALL", 0, 3, self.clear_entry)
         
         self.attach(entry_calc_basic := EntryCalcBasic(), 1, 3, 3, 1)
 
-        self.button_for_calc_basic("<-", 4, 3, self.back_space_entry)
+        self.button_for_calc_basic("_O", 4, 3, self.back_space_entry)
         
         BuildingButtonInGrid([["()", "(", ")", "mod", "_PI"], ["7", "8", "9", ":", "sqrt"], ["4", "5", "6", "*", "^"], ["1", "2", "3", "-", "!"], ["0", ".", "%", "+", "_E"]], self, 4)
 
@@ -311,8 +312,8 @@ class GridCalcBasic(Gtk.Grid):
         global entry_calc_basic
         entry_calc_basic.set_text(entry_calc_basic.get_text()[:-1])
 
-    def button_for_calc_basic(self, label: str, column: int, row: int, callback = None) -> Gtk.Button:
-        self.attach(ButtonForCalcBasic(label, "keybord-base-calc", callback if callback else label), column, row, 1, 1)
+    def button_for_calc_basic(self, label: str, column: int, row: int, callback) -> Gtk.Button:
+        self.attach(ButtonForCalcBasic(label, "keybord-base-calc", callback), column, row, 1, 1)
 
 class NotebookMain(Gtk.Notebook):
     def __init__(self):
