@@ -168,18 +168,47 @@ add_general_histori: Gtk.Box = Gtk.Box()
 scrolled_window_local_histori_basic: Gtk.ScrolledWindow = Gtk.ScrolledWindow()
 add_local_histori_basic: Gtk.Box = Gtk.Box()
 entry_calc_basic: Gtk.Entry = Gtk.Entry()
-
+set_for_result_basic_calc: Gtk.Label = Gtk.Label()
+result_basic_calc: str = "0"
 
 class LogicCalcBasic():
     @staticmethod
     def button__ALL():
-        global add_general_histori, add_local_histori_basic, result_calc_basic, entry_calc_basic
-        if (text_entry := entry_calc_basic.get_text().replace("_ALL", "")) != "":
+        global add_general_histori, add_local_histori_basic, result_basic_calc, entry_calc_basic
+        if (text_entry := "".join(entry_calc_basic.get_text().split("_ALL"))) != "":
             print(text_entry)
-            add_general_histori.append(BoxHistoriElement(text_entry, str(56)))
-            add_local_histori_basic.append(BoxHistoriElement(text_entry, str(56)))
+            add_general_histori.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
+            add_local_histori_basic.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
         entry_calc_basic.set_text("")
+    @staticmethod
+    def button__DO():
+        global add_general_histori, add_local_histori_basic, result_basic_calc, entry_calc_basic
+        if "".join(text_entry_list := entry_calc_basic.get_text().split("_DO")) != "":
+            text_entry = "".join(text_entry_list)
+            print(text_entry)
+            add_general_histori.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
+            add_local_histori_basic.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
+        entry_calc_basic.set_text(text_entry_list[1])
+    @staticmethod
+    def inputing_entry(button: Gtk.Button, label_button: str) -> None:
+        global entry_calc_basic
+        position_cursor: int = entry_calc_basic.get_position()
+        entry_calc_basic.insert_text(label_button, position_cursor)
+        entry_calc_basic.set_position(position_cursor + len(label_button))
 
+    @staticmethod
+    def button__POST():
+        global add_general_histori, add_local_histori_basic, result_basic_calc, entry_calc_basic
+        if "".join(text_entry_list := entry_calc_basic.get_text().split("_POST")) != "":
+            text_entry = "".join(text_entry_list)
+            print(text_entry)
+            add_general_histori.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
+            add_local_histori_basic.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
+        entry_calc_basic.set_text(text_entry_list[0])
+    @staticmethod
+    def button_result():
+        pass
+        
 class EmptyElementForHistori(Gtk.Box):
     def __init__(self):
         super().__init__()
@@ -220,17 +249,12 @@ class LabelForButtonCalcBasic(Gtk.Label):
 class ButtonForCalcBasic(Gtk.Button):
     def __init__(self, label: str, css_class: str = "keybord-base-calc", callback = None):
         super().__init__()
-        if not callback: callback = self.inputing_entry
+        if not callback: callback = LogicCalcBasic.inputing_entry
         self.set_child(LabelForButtonCalcBasic(label, css_class))
         self.add_css_class(css_class)
         self.set_hexpand(True)
         self.set_vexpand(True)
         self.connect("clicked", callback, label)
-    def inputing_entry(self, button: Gtk.Button, label_button: str) -> None:
-        global entry_calc_basic
-        position_cursor: int = entry_calc_basic.get_position()
-        entry_calc_basic.insert_text(label_button, position_cursor)
-        entry_calc_basic.set_position(position_cursor + len(label_button))
 
 class BoxHistoriElement(Gtk.Box):
     def __init__(self, expression: str, result: str):
@@ -247,8 +271,11 @@ class EntryCalcBasic(Gtk.Entry):
     def on_entry_changed(self, entry):
         if (text_entry := entry.get_text()):
             if "_ALL" in text_entry:
-                LogicCalcBasic.button__ALL() 
-
+                LogicCalcBasic.button__ALL()
+            elif "_DO" in text_entry:
+                LogicCalcBasic.button__DO()
+            elif "_POST" in text_entry:
+                LogicCalcBasic.button__POST()
 
 class DropTargetCalcBasic(Gtk.DropTarget):
     def __init__(self):
@@ -304,13 +331,13 @@ class NotebookCalcBasic(Gtk.Notebook):
 
 class GridCalcBasic(Gtk.Grid):
     def __init__(self):
-        global entry_calc_basic, box_local_histori_basic, add_local_histori_basic
+        global entry_calc_basic, box_local_histori_basic, add_local_histori_basic, set_for_result_basic_calc, result_basic_calc
         super().__init__()
         self.attach(box_local_histori_basic := ScrolledWindowHistori(), 0, 0, 5, 3)
 
         add_local_histori_basic = box_local_histori_basic.add_histori
 
-        self.button_for_calc_basic("_ALL", 0, 3, LogicCalcBasic.button__ALL())
+        self.button_for_calc_basic("_ALL", 0, 3, LogicCalcBasic.button__ALL)
         
         self.attach(entry_calc_basic := EntryCalcBasic(), 1, 3, 3, 1)
 
@@ -318,7 +345,11 @@ class GridCalcBasic(Gtk.Grid):
         
         BuildingButtonInGrid([["()", "(", ")", "mod", "_PI"], ["7", "8", "9", ":", "sqrt"], ["4", "5", "6", "*", "^"], ["1", "2", "3", "-", "!"], ["0", ".", "%", "+", "_E"]], self, 4)
 
-        self.attach(ButtonForCalcBasic("="), 0, 9, 5, 1)
+        self.attach(set_for_result := ButtonForCalcBasic(result_basic_calc, "keybord-base-calc"), 0, 9, 2, 1)
+
+        self.button_for_calc_basic("_DO", 2, 9, LogicCalcBasic.button__DO)
+        self.button_for_calc_basic("_POST", 3, 9, LogicCalcBasic.button__POST)
+        self.button_for_calc_basic("=", 4, 9, LogicCalcBasic.button_result)
 
         self.attach(NotebookCalcBasic(), 0 , 10, 5, 4)
         
@@ -329,7 +360,7 @@ class GridCalcBasic(Gtk.Grid):
         global entry_calc_basic
         entry_calc_basic.set_text(entry_calc_basic.get_text()[:-1])
 
-    def button_for_calc_basic(self, label: str, column: int, row: int, callback) -> Gtk.Button:
+    def button_for_calc_basic(self, label: str, column: int, row: int, callback) -> None:
         self.attach(ButtonForCalcBasic(label, "keybord-base-calc", callback), column, row, 1, 1)
 
 class NotebookMain(Gtk.Notebook):
