@@ -19,6 +19,10 @@ class BaseCalc:
         return expression if expression else '0'
 
 class CalculateMain:
+    expression: str
+    def __init__(self, expression):
+        self.expression = expression.replace(" ", "")
+
     # Методподсчёта скобок
     async def _counting_parentheses(self, expression: str) -> list[int]:
         return [expression.count('('), expression.count(')')]
@@ -90,6 +94,12 @@ class CalculateMain:
                 tokens.pop(priority_operator_index)
                 a: Decimal = Decimal(tokens[priority_operator_index-1])
                 tokens[priority_operator_index-1] = str(a*b)
+            elif ':' in tokens:
+                priority_operator_index = tokens.index(':')
+                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                tokens.pop(priority_operator_index)
+                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                tokens[priority_operator_index-1] = str(a/b)
             elif '/' in tokens:
                 priority_operator_index = tokens.index('/')
                 b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
@@ -111,31 +121,24 @@ class CalculateMain:
         return tokens[0]
 
     # Основная функция подсчёта
-    async def calc_main(self, *, expression: str) -> str:
-        expression = expression.replace(" ", "")
-        try:
-            if not (await self._equality_of_two_numbers(await self._counting_parentheses(expression))):
-                raise UnequalNumberOfParenthesesException()
+    async def calc(self) -> str:
+        if not (await self._equality_of_two_numbers(await self._counting_parentheses(self.expression))):
+            raise UnequalNumberOfParenthesesException()
+        
+        expression_1 = self.expression
+        while (await self._counting_parentheses(expression_1))[0] != 0:
+            priority_brackets = await self._searching_for_priority_brackets(
+                expression_1, 
+                (await self._counting_parentheses(expression_1))[0]
+            )
+            inner_expression = expression_1[priority_brackets[0] + 1:priority_brackets[1]]
+            expression_1 = (
+                expression_1[:priority_brackets[0]] +
+                (await self._calculate_expression_base(await self._calculate_expression_priority(await self._tokenize(inner_expression)))) +
+                expression_1[priority_brackets[1] + 1:]
+            )
+        return await BaseCalc.removing_zeros(str(await self._calculate_expression_base(await self._calculate_expression_priority(await self._tokenize(expression_1)))))
             
-            expression_1 = expression
-            while (await self._counting_parentheses(expression_1))[0] != 0:
-                priority_brackets = await self._searching_for_priority_brackets(
-                    expression_1, 
-                    (await self._counting_parentheses(expression_1))[0]
-                )
-                inner_expression = expression_1[priority_brackets[0] + 1:priority_brackets[1]]
-                expression_1 = (
-                    expression_1[:priority_brackets[0]] +
-                    (await self._calculate_expression_base(await self._calculate_expression_priority(await self._tokenize(inner_expression)))) +
-                    expression_1[priority_brackets[1] + 1:]
-                )
-            return await BaseCalc.removing_zeros(str(await self._calculate_expression_base(await self._calculate_expression_priority(await self._tokenize(expression_1)))))
-            
-        except Exception as e:
-            print(e)
-            return expression
-
-
 
 
 
@@ -172,23 +175,33 @@ set_for_result_basic_calc: Gtk.Label = Gtk.Label()
 result_basic_calc: str = "0"
 
 class LogicCalcBasic():
-    @staticmethod
-    def button__ALL():
+    entry_text: str = ""
+
+    def __init__(self, entry_text: str):
+        self.entry_text = entry_text
+
+    def button__ALL(self):
         global add_general_histori, add_local_histori_basic, result_basic_calc, entry_calc_basic
-        if (text_entry := "".join(entry_calc_basic.get_text().split("_ALL"))) != "":
-            print(text_entry)
-            add_general_histori.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
-            add_local_histori_basic.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
+        if (entry_text := "".join(self.entry_text.split("_ALL"))) != "":
+            add_general_histori.append(BoxHistoriElement(entry_text, str(result_basic_calc)))
+            add_local_histori_basic.append(BoxHistoriElement(entry_text, str(result_basic_calc)))
         entry_calc_basic.set_text("")
-    @staticmethod
-    def button__DO():
+
+        
+    def button__DO(self):
         global add_general_histori, add_local_histori_basic, result_basic_calc, entry_calc_basic
-        if "".join(text_entry_list := entry_calc_basic.get_text().split("_DO")) != "":
-            text_entry = "".join(text_entry_list)
-            print(text_entry)
-            add_general_histori.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
-            add_local_histori_basic.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
-        entry_calc_basic.set_text(text_entry_list[1])
+        if (entry_text := "".join(entry_text_list := self.entry_text.split("_DO"))) != "":
+            add_general_histori.append(BoxHistoriElement(entry_text, str(result_basic_calc)))
+            add_local_histori_basic.append(BoxHistoriElement(entry_text, str(result_basic_calc)))
+        entry_calc_basic.set_text(entry_text_list[1])
+
+    def button__POST(self):
+        global add_general_histori, add_local_histori_basic, result_basic_calc, entry_calc_basic
+        if (entry_text := "".join(entry_text_list := entry_calc_basic.get_text().split("_POST"))) != "":
+            add_general_histori.append(BoxHiskoriElement(entry_text, str(result_basic_calc)))
+            add_local_histori_basic.append(BoxHistoriElement(entry_text, str(result_basic_calc)))
+        entry_calc_basic.set_text(entry_text_list[0])
+
     @staticmethod
     def inputing_entry(button: Gtk.Button, label_button: str) -> None:
         global entry_calc_basic
@@ -196,19 +209,27 @@ class LogicCalcBasic():
         entry_calc_basic.insert_text(label_button, position_cursor)
         entry_calc_basic.set_position(position_cursor + len(label_button))
 
-    @staticmethod
-    def button__POST():
+    def button_result(self):
         global add_general_histori, add_local_histori_basic, result_basic_calc, entry_calc_basic
-        if "".join(text_entry_list := entry_calc_basic.get_text().split("_POST")) != "":
-            text_entry = "".join(text_entry_list)
-            print(text_entry)
-            add_general_histori.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
-            add_local_histori_basic.append(BoxHistoriElement(text_entry, str(result_basic_calc)))
-        entry_calc_basic.set_text(text_entry_list[0])
-    @staticmethod
-    def button_result():
-        pass
-        
+        if (entry_text := "".join(entry_text_list := self.entry_text.split("="))) != "":
+            add_general_histori.append(BoxHistoriElement(entry_text, str(result_basic_calc)))
+            add_local_histori_basic.append(BoxHistoriElement(entry_text, str(result_basic_calc)))
+        entry_calc_basic.set_text(result_basic_calc)
+        entry_calc_basic.set_position(len(result_basic_calc)-1)
+
+
+    def button__O(self) -> None:
+        global entry_calc_basic
+        if (entry_text := "".join(entry_text_list := self.entry_text.split("_O"))) != "":
+            element_position = len(entry_text_list[0])-1
+            print(element_position, "22")
+            entry_calc_basic.set_text(self.entry_text[:element_position] + self.entry_text[element_position+3:])
+            
+    def button_other(self) -> None:
+        global set_for_result_basic_calc, result_basic_calc
+        result_basic_calc = asyncio.run(CalculateMain(self.entry_text).calc())
+        set_for_result_basic_calc.set_text(result_basic_calc)
+""" 
 class EmptyElementForHistori(Gtk.Box):
     def __init__(self):
         super().__init__()
@@ -221,11 +242,11 @@ class BoxForElementsHistori(Gtk.Box):
     def __init__(self):
         super().__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.append(EmptyElementForHistori())
-
+"""
 class ScrolledWindowHistori(Gtk.ScrolledWindow):
     def __init__(self):
         super().__init__()
-        self.add_histori = BoxForElementsHistori()
+        self.add_histori = Gtk.Box(spacing=0, orientation=Gtk.Orientation.VERTICAL)
         self.set_child(self.add_histori)
         self.set_hexpand(True)
         self.set_vexpand(True)
@@ -270,12 +291,19 @@ class EntryCalcBasic(Gtk.Entry):
         self.connect("changed", self.on_entry_changed)
     def on_entry_changed(self, entry):
         if (text_entry := entry.get_text()):
+            logic_calc_basic = LogicCalcBasic(text_entry)
             if "_ALL" in text_entry:
-                LogicCalcBasic.button__ALL()
+                logic_calc_basic.button__ALL()
             elif "_DO" in text_entry:
-                LogicCalcBasic.button__DO()
+                logic_calc_basic.button__DO()
             elif "_POST" in text_entry:
-                LogicCalcBasic.button__POST()
+                logic_calc_basic.button__POST()
+            elif "_O" in text_entry:
+                logic_calc_basic.button__O()
+            elif "=" in text_entry:
+                logic_calc_basic.button_result()
+            else:
+                logic_calc_basic.button_other()
 
 class DropTargetCalcBasic(Gtk.DropTarget):
     def __init__(self):
@@ -337,31 +365,29 @@ class GridCalcBasic(Gtk.Grid):
 
         add_local_histori_basic = box_local_histori_basic.add_histori
 
-        self.button_for_calc_basic("_ALL", 0, 3, LogicCalcBasic.button__ALL)
+        self.button_for_calc_basic("_ALL", 0, 3)
         
         self.attach(entry_calc_basic := EntryCalcBasic(), 1, 3, 3, 1)
 
-        self.button_for_calc_basic("_O", 4, 3, self.back_space_entry)
+        self.button_for_calc_basic("_O", 4, 3)
         
         BuildingButtonInGrid([["()", "(", ")", "mod", "_PI"], ["7", "8", "9", ":", "sqrt"], ["4", "5", "6", "*", "^"], ["1", "2", "3", "-", "!"], ["0", ".", "%", "+", "_E"]], self, 4)
 
-        self.attach(set_for_result := ButtonForCalcBasic(result_basic_calc, "keybord-base-calc"), 0, 9, 2, 1)
+        self.attach(set_for_result_basic_calc := ButtonForCalcBasic(result_basic_calc, "keybord-base-calc"), 0, 9, 2, 1)
 
-        self.button_for_calc_basic("_DO", 2, 9, LogicCalcBasic.button__DO)
-        self.button_for_calc_basic("_POST", 3, 9, LogicCalcBasic.button__POST)
-        self.button_for_calc_basic("=", 4, 9, LogicCalcBasic.button_result)
+        set_for_result_basic_calc = set_for_result_basic_calc.get_child()
+
+        self.button_for_calc_basic("_DO", 2, 9)
+        self.button_for_calc_basic("_POST", 3, 9)
+        self.button_for_calc_basic("=", 4, 9)
 
         self.attach(NotebookCalcBasic(), 0 , 10, 5, 4)
         
         self.set_hexpand(True)
         self.set_vexpand(True)
 
-    def back_space_entry(self, button) -> None:
-        global entry_calc_basic
-        entry_calc_basic.set_text(entry_calc_basic.get_text()[:-1])
-
-    def button_for_calc_basic(self, label: str, column: int, row: int, callback) -> None:
-        self.attach(ButtonForCalcBasic(label, "keybord-base-calc", callback), column, row, 1, 1)
+    def button_for_calc_basic(self, label: str, column: int, row: int) -> None:
+        self.attach(ButtonForCalcBasic(label, "keybord-base-calc", None), column, row, 1, 1)
 
 class NotebookMain(Gtk.Notebook):
     def __init__(self):
@@ -376,7 +402,7 @@ class NotebookMain(Gtk.Notebook):
 class GridMain(Gtk.Grid):
     def __init__(self):
         super().__init__()
-        global box_general_histori, add_general_histori
+        global scrolled_window_general_histori, add_general_histori
         self.add_css_class("main_grid")
         self.attach(scrolled_window_general_histori := ScrolledWindowHistori(), 0, 0, 1, 4)
         add_general_histori = scrolled_window_general_histori.add_histori
@@ -388,7 +414,7 @@ class MainWindow(Gtk.ApplicationWindow):
         super().__init__(application=app)
         self.set_title("Calculator")
         self.set_titlebar(CustomTitleBar()) 
-        self.set_default_size(400, 600)
+        self.set_default_size(400, 800)
         self.set_child(GridMain())
         
 ###############################################################
@@ -448,10 +474,10 @@ class GridMainTitleBar(Gtk.Grid):
         self.attach(ButtonTitleBar("general\nhistori", self.button_settings_view_general_histori, None), 0, 0, 1, 1)
         self.attach(MenuButtonLocalHistoriTitleBar("local\nhistori"), 0, 1, 1, 1)
     
-    def button_settings_view_general_histori(self, button) -> None:
-        global box_general_histori
+    def button_settings_view_general_histori(self, button: Gtk.Button) -> None:
+        global scrolled_window_general_histori
         # Set the visibility based on the current state
-        box_general_histori.set_visible(not box_general_histori.is_visible())
+        scrolled_window_general_histori.set_visible(not scrolled_window_general_histori.is_visible())
 
 
 class PopoverMainTitleBar(Gtk.Popover):
