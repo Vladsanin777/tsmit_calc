@@ -118,10 +118,31 @@ class CalculateMain:
                 tokens.pop(priority_operator_index)
                 a: Decimal = Decimal(tokens[priority_operator_index-1])
                 tokens[priority_operator_index-1] = str(a+b)
+            elif '^' in tokens:
+                priority_operator_index = tokens.index('^')
+                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                tokens.pop(priority_operator_index)
+                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                tokens[priority_operator_index-1] = str(a**b)
         return tokens[0]
+
+    async def debuger(self):
+        match self.expression[-1]:
+            case "*" | "/" | ":" | "+" | "-" | "^" | "%":
+                self.expression = self.expression[:-1]
+        match self.expression[-3:]:
+            case "log" | "mod":
+                self.expression = self.expression[:-3]
+        match self.expression[-2:]:
+            case "ln" | "lg":
+                self.expression = self.expression[:-2]
+        while self.expression.count("(") > self.expression.count(")"):
+            self.expression += ")"
+
 
     # Основная функция подсчёта
     async def calc(self) -> str:
+        await self.debuger()
         if not (await self._equality_of_two_numbers(await self._counting_parentheses(self.expression))):
             raise UnequalNumberOfParenthesesException()
         
@@ -171,7 +192,8 @@ add_general_histori: Gtk.Box = Gtk.Box()
 scrolled_window_local_histori_basic: Gtk.ScrolledWindow = Gtk.ScrolledWindow()
 add_local_histori_basic: Gtk.Box = Gtk.Box()
 entry_calc_basic: Gtk.Entry = Gtk.Entry()
-set_for_result_basic_calc: Gtk.Label = Gtk.Label()
+set_for_result_basic_calc_label: Gtk.Label = Gtk.Label()
+set_for_result_basic_calc_button: Gtk.Button = Gtk.Button()
 result_basic_calc: str = "0"
 
 class LogicCalcBasic():
@@ -185,6 +207,8 @@ class LogicCalcBasic():
         if (entry_text := "".join(self.entry_text.split("_ALL"))) != "":
             add_general_histori.append(BoxHistoriElement(entry_text, str(result_basic_calc)))
             add_local_histori_basic.append(BoxHistoriElement(entry_text, str(result_basic_calc)))
+            result_basic_calc = "0"
+            set_for_result_basic_calc.set_text(result_basic_calc)
         entry_calc_basic.set_text("")
 
         
@@ -203,8 +227,9 @@ class LogicCalcBasic():
         entry_calc_basic.set_text(entry_text_list[0])
 
     @staticmethod
-    def inputing_entry(button: Gtk.Button, label_button: str) -> None:
+    def inputing_entry(button: Gtk.Button, label_button: str = None) -> None:
         global entry_calc_basic
+        if not label_button: label_button = button.get_child().get_text()
         position_cursor: int = entry_calc_basic.get_position()
         entry_calc_basic.insert_text(label_button, position_cursor)
         entry_calc_basic.set_position(position_cursor + len(label_button))
@@ -268,14 +293,14 @@ class LabelForButtonCalcBasic(Gtk.Label):
         self.add_controller(DragSourceForLabelButtonCalcBasic())
 
 class ButtonForCalcBasic(Gtk.Button):
-    def __init__(self, label: str, css_class: str = "keybord-base-calc", callback = None):
+    def __init__(self, label: str, css_class: str = "keybord-base-calc", callback = None, label_callback: bool = True):
         super().__init__()
         if not callback: callback = LogicCalcBasic.inputing_entry
         self.set_child(LabelForButtonCalcBasic(label, css_class))
         self.add_css_class(css_class)
         self.set_hexpand(True)
         self.set_vexpand(True)
-        self.connect("clicked", callback, label)
+        self.connect(*(("clicked", callback, label) if label_callback else ("clicked", callback)))
 
 class BoxHistoriElement(Gtk.Box):
     def __init__(self, expression: str, result: str):
@@ -373,7 +398,7 @@ class GridCalcBasic(Gtk.Grid):
         
         BuildingButtonInGrid([["()", "(", ")", "mod", "_PI"], ["7", "8", "9", ":", "sqrt"], ["4", "5", "6", "*", "^"], ["1", "2", "3", "-", "!"], ["0", ".", "%", "+", "_E"]], self, 4)
 
-        self.attach(set_for_result_basic_calc := ButtonForCalcBasic(result_basic_calc, "keybord-base-calc"), 0, 9, 2, 1)
+        self.attach(set_for_result_basic_calc := ButtonForCalcBasic(result_basic_calc, "keybord-base-calc", None, False), 0, 9, 2, 1)
 
         set_for_result_basic_calc = set_for_result_basic_calc.get_child()
 
