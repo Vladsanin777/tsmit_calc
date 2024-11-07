@@ -78,7 +78,7 @@ class CalculateMain:
             case "0b":
                 number = number[2:]
                 # Разделяем целую и дробную части
-                integer_part, fractional_part = number.split('.') if '.' in number else number, ''
+                integer_part, fractional_part = (number.split('.') if '.' in number else (number, ''))
 
                 # Преобразуем целую часть
                 integer_value = int(integer_part, base = 2) if integer_part else 0
@@ -87,10 +87,10 @@ class CalculateMain:
                 fractional_value = sum(int(bit) * 2**(-i) for i, bit in enumerate(fractional_part, start=1))
 
                 # Итоговое значение
-                return Decimal(str(integer_value + fractional_value))
+                return Decimal(integer_value) + Decimal(fractional_value)
             case "0o":    
                 number = number[2:]
-                integer_part, fractional_part = number.split('.') if '.' in number else number, ''
+                integer_part, fractional_part = (number.split('.') if '.' in number else (number, ''))
 
                 # Преобразуем целую часть
                 integer_value = int(integer_part, 8) if integer_part else 0
@@ -99,7 +99,7 @@ class CalculateMain:
                 fractional_value = sum(int(digit) * 8**(-i) for i, digit in enumerate(fractional_part, start=1))
 
                 # Итоговое значение
-                return Decimal(str(integer_value + fractional_value))
+                return Decimal(integer_value) + Decimal(fractional_value)
             case _:
                 return Decimal(number)
     # Calculate persent and factorial
