@@ -45,85 +45,124 @@ class CalculateMain:
         return any(c in '+-*/' for c in expression)
     # Разбиение строки на отдельные элементы (числа и операторы)
     async def _tokenize(self, expression: str) -> list[str]:
-        tokens: list[str] = list()
-        token: str = ""
-        minus: bool = True
-        
-        for c in expression:
-            if c.isdigit() or c == '.' or (minus and c == '-'):
-                token += c
-                minus = False
-            else:
-                if token in "%!":
-                    minus = True
-                if token:
-                    tokens.append(token)
-                    token = ""
-                tokens.append(c)  # Оператор
-        
-        if token:
-            tokens.append(token)  # Последнее число в выражении
-        
-        return tokens
+        if not (expression[0].isdigit() and expression[0] != '-'):
+            return["Error first element must digit"]
+        # sheach first digit
+        positions = [element_i for element_i in range(len(expression)) if "%!-+*/:^".find(expression[element_i]) != -1]
+        print(positions)
+        result_list = list()
+        while positions != []:
+            print(positions)
+            # wrating first digit in result list
+            result_list.append(expression[(number_operators := positions.pop())+1:])
+            # wrating operator in result list
+            result_list.append(expression[number_operators])
+            print(result_list)
+            # trimming string expression
+            expression = expression[:number_operators]
+            print(expression)
+        if result_list == []:
+            print(89)
+            return [expression]
+        result_list.append(expression)
+        result_list = result_list[::-1] 
+        return result_list
+
+    async def _float(self, number: str):
+        match number[:2] :
+            case "0x":
+                try : 
+                    return Decimal(float.fromhex(number))
+                except : 
+                    return Decimal(0)
+            case "0b":
+                number = number[2:]
+                # Разделяем целую и дробную части
+                integer_part, fractional_part = number.split('.') if '.' in number else number, ''
+
+                # Преобразуем целую часть
+                integer_value = int(integer_part, base = 2) if integer_part else 0
+
+                # Преобразуем дробную часть
+                fractional_value = sum(int(bit) * 2**(-i) for i, bit in enumerate(fractional_part, start=1))
+
+                # Итоговое значение
+                return Decimal(str(integer_value + fractional_value))
+            case "0o":    
+                number = number[2:]
+                integer_part, fractional_part = number.split('.') if '.' in number else number, ''
+
+                # Преобразуем целую часть
+                integer_value = int(integer_part, 8) if integer_part else 0
+
+                # Преобразуем дробную часть
+                fractional_value = sum(int(digit) * 8**(-i) for i, digit in enumerate(fractional_part, start=1))
+
+                # Итоговое значение
+                return Decimal(str(integer_value + fractional_value))
+            case _:
+                return Decimal(number)
     # Calculate persent and factorial
     async def _calculate_expression_priority(self, tokens: list[str]) -> list[str]:
+        print(tokens)
         if not ('%' in tokens or '!' in tokens): return tokens
         t: int
         while '%' in tokens:
             t = tokens.index('%')
             print(tokens)
             tokens.pop(t)
-            tokens[t-1] = str(Decimal(tokens[t-1])/Decimal(100))
+            tokens[t-1] = str(await self._float(tokens[t-1])/ await self._float(100))
         while '!' in tokens:
             t = tokens.index('!')
             tokens.pop(t)
-            tokens[t-1] = factorial(int(tokens[t-1]))
+            tokens[t-1] = factorial(await self._float(tokens[t-1]))
         return tokens
     # Main method for calculate
     async def _calculate_expression_base(self, tokens: list[str]) -> str:
         print(tokens)
-        result: Decimal = Decimal(tokens[0])
+        result = await self._float(tokens[0])
         last_operator: str = '+'
         token: str
-        num: Decimal
-        priority_operator_index: int
+        num = 0
+        priority_operator_index = 0
         while len(tokens) != 1:
+            if '^' in tokens:
+                priority_operator_index = tokens.index('^')
+                b = await self._float(tokens.pop(priority_operator_index+1))
+                tokens.pop(priority_operator_index)
+                a = await self._float(tokens[priority_operator_index-1])
+                tokens[priority_operator_index-1] = str(a**b)
             if '*' in tokens:
                 priority_operator_index = tokens.index('*')
-                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                b = await self._float(tokens.pop(priority_operator_index+1))
                 tokens.pop(priority_operator_index)
-                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                a = await self._float(tokens[priority_operator_index-1])
                 tokens[priority_operator_index-1] = str(a*b)
             elif ':' in tokens:
                 priority_operator_index = tokens.index(':')
-                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                b = await self._float(tokens.pop(priority_operator_index+1))
                 tokens.pop(priority_operator_index)
-                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                a = await self._float(tokens[priority_operator_index-1])
                 tokens[priority_operator_index-1] = str(a/b)
             elif '/' in tokens:
                 priority_operator_index = tokens.index('/')
-                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                b = await self._float(tokens.pop(priority_operator_index+1))
                 tokens.pop(priority_operator_index)
-                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                a = await self._float(tokens[priority_operator_index-1])
                 tokens[priority_operator_index-1] = str(a/b)
             elif '-' in tokens:
                 priority_operator_index = tokens.index('-')
-                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                b = await self._float(tokens.pop(priority_operator_index+1))
                 tokens.pop(priority_operator_index)
-                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                a = await self._float(tokens[priority_operator_index-1])
                 tokens[priority_operator_index-1] = str(a-b)
             elif '+' in tokens:
                 priority_operator_index = tokens.index('+')
-                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
+                b = await self._float(tokens.pop(priority_operator_index+1))
                 tokens.pop(priority_operator_index)
-                a: Decimal = Decimal(tokens[priority_operator_index-1])
+                a = await self._float(tokens[priority_operator_index-1])
                 tokens[priority_operator_index-1] = str(a+b)
-            elif '^' in tokens:
-                priority_operator_index = tokens.index('^')
-                b: Decimal = Decimal(tokens.pop(priority_operator_index+1))
-                tokens.pop(priority_operator_index)
-                a: Decimal = Decimal(tokens[priority_operator_index-1])
-                tokens[priority_operator_index-1] = str(a**b)
+            
         return tokens[0]
 
     async def debuger(self):
@@ -380,7 +419,7 @@ class NotebookCalcBasic(Gtk.Notebook):
         self.append_page(GridCalcBasicKeybord([["A", "B", "C"], ["D", "E", "F"]]), LabelForButtonCalcBasic("digits 16"))
         self.append_page(GridCalcBasicKeybord([["+", "-", ":", "*", "^"], ["!", "sqrt", "ln", "log", "lg"]]), LabelForButtonCalcBasic("operators"))
         self.append_page(GridCalcBasicKeybord([["_E", "_PI"]]), LabelForButtonCalcBasic("consts"))
-        self.append_page(GridCalcBasicKeybord([["round", "mod", "0x"], ["0b", "0", ","]]), LabelForButtonCalcBasic("other"))
+        self.append_page(GridCalcBasicKeybord([["round", "mod", "0x"], ["0b", "0o", ","]]), LabelForButtonCalcBasic("other"))
 
 class GridCalcBasic(Gtk.Grid):
     def __init__(self):
