@@ -43,31 +43,6 @@ class CalculateMain:
     # Проверка наличия операции вычитания
     async def _has_operations(self, expression: str) -> bool:
         return any(c in '+-*/' for c in expression)
-    # Разбиение строки на отдельные элементы (числа и операторы)
-    async def _tokenize(self, expression: str) -> list[str]:
-        if not (expression[0].isdigit() and expression[0] != '-'):
-            return["Error first element must digit"]
-        # sheach first digit
-        positions = [element_i for element_i in range(len(expression)) if "%!-+*/:^".find(expression[element_i]) != -1]
-        print(positions)
-        result_list = list()
-        while positions != []:
-            print(positions)
-            # wrating first digit in result list
-            result_list.append(expression[(number_operators := positions.pop())+1:])
-            # wrating operator in result list
-            result_list.append(expression[number_operators])
-            print(result_list)
-            # trimming string expression
-            expression = expression[:number_operators]
-            print(expression)
-        if result_list == []:
-            print(89)
-            return [expression]
-        result_list.append(expression)
-        result_list = result_list[::-1] 
-        return result_list
-
     async def _float(self, number: str):
         match number[:2] :
             case "0x":
@@ -102,21 +77,7 @@ class CalculateMain:
                 return Decimal(integer_value) + Decimal(fractional_value)
             case _:
                 return Decimal(number)
-    # Calculate persent and factorial
-    async def _calculate_expression_priority(self, tokens: list[str]) -> list[str]:
-        print(tokens)
-        if not ('%' in tokens or '!' in tokens): return tokens
-        t: int
-        while '%' in tokens:
-            t = tokens.index('%')
-            print(tokens)
-            tokens.pop(t)
-            tokens[t-1] = str(await self._float(tokens[t-1])/ await self._float(100))
-        while '!' in tokens:
-            t = tokens.index('!')
-            tokens.pop(t)
-            tokens[t-1] = factorial(await self._float(tokens[t-1]))
-        return tokens
+    
     # Main method for calculate
     async def _calculate_expression_base(self, tokens: list[str]) -> str:
         print(tokens)
@@ -162,42 +123,88 @@ class CalculateMain:
                 tokens.pop(priority_operator_index)
                 a = await self._float(tokens[priority_operator_index-1])
                 tokens[priority_operator_index-1] = str(a+b)
-            
+        print(tokens[0], 35) 
         return tokens[0]
-
+    # Calculate persent and factorial
+    async def _calculate_expression_list(self, tokens: list[str]) -> str:
+        print(tokens)
+        if '%' in tokens or '!' in tokens:
+            t: int
+            while '%' in tokens:
+                t = tokens.index('%')
+                print(tokens)
+                tokens.pop(t)
+                tokens[t-1] = str(await self._float(tokens[t-1])/ await self._float(100))
+            while '!' in tokens:
+                t = tokens.index('!')
+                tokens.pop(t)
+                tokens[t-1] = factorial(await self._float(tokens[t-1]))
+        return await self._calculate_expression_base(tokens)
     async def debuger(self):
-        match self.expression[-1]:
-            case "*" | "/" | ":" | "+" | "-" | "^" | "%":
-                self.expression = self.expression[:-1]
-        match self.expression[-3:]:
-            case "log" | "mod":
-                self.expression = self.expression[:-3]
-        match self.expression[-2:]:
-            case "ln" | "lg":
-                self.expression = self.expression[:-2]
+        replay: bool = True
+        while replay:
+            replay = False
+            match self.expression[-1]:
+                case "*" | "/" | ":" | "+" | "-" | "^" | "%":
+                    self.expression = self.expression[:-1]
+                    replay = True
+            match self.expression[-3:]:
+                case "log" | "mod":
+                    self.expression = self.expression[:-3]
+                    replay = True
+            match self.expression[-2:]:
+                case "ln" | "lg":
+                    self.expression = self.expression[:-2]
+                    replay = True
         while self.expression.count("(") > self.expression.count(")"):
             self.expression += ")"
+    # Разбиение строки на отдельные элементы (числа и операторы)
+    async def _tokenize(self, expression: str) -> str:
+        if not (expression[0].isdigit() and expression[0] != '-'):
+            return["Error first element must digit"]
+        # sheach first digit
+        positions = [element_i for element_i in range(len(expression)) if "%!-+*/:^".find(expression[element_i]) != -1]
+        print(positions)
+        result_list = list()
+        while positions != []:
+            print(positions)
+            # wrating first digit in result list
+            result_list.append(expression[(number_operators := positions.pop())+1:])
+            # wrating operator in result list
+            result_list.append(expression[number_operators])
+            print(result_list)
+            # trimming string expression
+            expression = expression[:number_operators]
+            print(expression)
+        if result_list == []:
+            print(89)
+            result_list = [expression]
+        else:
+            result_list.append(expression)
+            result_list = result_list[::-1]
+        print(result_list, 34)
+        return await self._calculate_expression_list(result_list)
+
 
 
     # Основная функция подсчёта
     async def calc(self) -> str:
         await self.debuger()
-        if not (await self._equality_of_two_numbers(await self._counting_parentheses(self.expression))):
-            raise UnequalNumberOfParenthesesException()
         
         expression_1 = self.expression
-        while (await self._counting_parentheses(expression_1))[0] != 0:
+        while (count_brackets := expression_1.count("(")) != 0:
+            print("1")
             priority_brackets = await self._searching_for_priority_brackets(
                 expression_1, 
-                (await self._counting_parentheses(expression_1))[0]
+                count_brackets
             )
             inner_expression = expression_1[priority_brackets[0] + 1:priority_brackets[1]]
             expression_1 = (
                 expression_1[:priority_brackets[0]] +
-                (await self._calculate_expression_base(await self._calculate_expression_priority(await self._tokenize(inner_expression)))) +
+                await self._tokenize(inner_expression) +
                 expression_1[priority_brackets[1] + 1:]
             )
-        return await BaseCalc.removing_zeros(str(await self._calculate_expression_base(await self._calculate_expression_priority(await self._tokenize(expression_1)))))
+        return await BaseCalc.removing_zeros(str(await self._tokenize(expression_1)))
             
 
 
