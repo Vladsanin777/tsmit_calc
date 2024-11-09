@@ -1,7 +1,7 @@
 import gi
 import random
 import asyncio
-from math import factorial
+from math import *
 from decimal import Decimal
 
 gi.require_version('Gtk', '4.0')
@@ -23,9 +23,6 @@ class CalculateMain:
     def __init__(self, expression):
         self.expression = expression.replace(" ", "")
 
-    # Методподсчёта скобок
-    async def _counting_parentheses(self, expression: str) -> list[int]:
-        return [expression.count('('), expression.count(')')]
     async def _find_nth_occurrence(self, string: str, substring: str, n: int) -> int:
         start = 0
         for _ in range(n):
@@ -37,19 +34,10 @@ class CalculateMain:
     # Метод для поиска приоритетных скобок
     async def _searching_for_priority_brackets(self, expression: str, number_of_bracket: int) -> list[int]:
         return [(number_last_open_brackets := await self._find_nth_occurrence(expression, '(', number_of_bracket)), expression.find(')', number_last_open_brackets)]
-    # Метод проверки на равность двух чисел
-    async def _equality_of_two_numbers(self, counting_parentheses: list[int]) -> bool:
-        return counting_parentheses[0] == counting_parentheses[1]
-    # Проверка наличия операции вычитания
-    async def _has_operations(self, expression: str) -> bool:
-        return any(c in '+-*/' for c in expression)
     async def _float(self, number: str):
         match number[:2] :
             case "0x":
-                try : 
-                    return Decimal(float.fromhex(number))
-                except : 
-                    return Decimal(0)
+                return Decimal(float.fromhex(number))
             case "0b":
                 number = number[2:]
                 # Разделяем целую и дробную части
@@ -80,7 +68,7 @@ class CalculateMain:
     
     # Main method for calculate
     async def _calculate_expression_base(self, tokens: list[str]) -> str:
-        print(tokens)
+        print(tokens, 73)
         result = await self._float(tokens[0])
         last_operator: str = '+'
         token: str
@@ -128,59 +116,75 @@ class CalculateMain:
     # Calculate persent and factorial
     async def _calculate_expression_list(self, tokens: list[str]) -> str:
         print(tokens)
-        if '%' in tokens or '!' in tokens:
-            t: int
-            while '%' in tokens:
-                t = tokens.index('%')
-                print(tokens)
-                tokens.pop(t)
-                tokens[t-1] = str(await self._float(tokens[t-1])/ await self._float(100))
-            while '!' in tokens:
-                t = tokens.index('!')
-                tokens.pop(t)
-                tokens[t-1] = factorial(await self._float(tokens[t-1]))
+        t: int
+        while '%' in tokens:
+            t = tokens.index('%')
+            print(tokens)
+            print(t)
+            tokens.pop(t)
+            print(tokens[t-1])
+            tokens[t-1] = str(await self._float(tokens[t-1])/ await self._float(str(100)))
+        while '!' in tokens:
+            t = tokens.index('!')
+            tokens.pop(t)
+            tokens[t-1] = str(factorial(int(await self._float(tokens[t-1]))))
+        while 'n' in tokens:
+            t = tokens.index('n')
+            tokens.pop(t)
+            tokens[t] = str(log(int(await self._float(tokens[t]))))
+            print(tokens, 67)
+        while 'g' in tokens:
+            t = tokens.index('g')
+            tokens.pop(t)
+            print(tokens[t], 45)
+            tokens[t] = str(log10(int(await self._float(tokens[t]))))
+        while 's' in tokens:
+            t = tokens.index('s')
+            tokens.pop(t)
+            tokens[t] = str(sqrt(int(await self._float(tokens[t]))))
+        while 'l' in tokens:
+            t = tokens.index('l')
+            tokens.pop(t)
+            tokens.pop(t+1)
+            tokens[t] = str(log(int(await self._float(tokens[t])), int(await self._float(tokens[t+1]))))
+            tokens.pop(t+1)
         return await self._calculate_expression_base(tokens)
     async def debuger(self):
+        self.expression = self.expression.replace("sqrt", "s")
+        self.expression = self.expression.replace("ln", "n")
+        self.expression = self.expression.replace("log", "l")
+        self.expression = self.expression.replace("lg", "g")
         replay: bool = True
         while replay:
             replay = False
             match self.expression[-1]:
-                case "*" | "/" | ":" | "+" | "-" | "^" | "%":
+                case "*" | "/" | ":" | "+" | "-" | "^" | "l" | "m" | "n" | "g" | "s":
                     self.expression = self.expression[:-1]
                     replay = True
-            match self.expression[-3:]:
-                case "log" | "mod":
-                    self.expression = self.expression[:-3]
-                    replay = True
-            match self.expression[-2:]:
-                case "ln" | "lg":
-                    self.expression = self.expression[:-2]
-                    replay = True
+
         while self.expression.count("(") > self.expression.count(")"):
             self.expression += ")"
     # Разбиение строки на отдельные элементы (числа и операторы)
     async def _tokenize(self, expression: str) -> str:
-        if not (expression[0].isdigit() and expression[0] != '-'):
-            return["Error first element must digit"]
         # sheach first digit
-        positions = [element_i for element_i in range(len(expression)) if "%!-+*/:^".find(expression[element_i]) != -1]
-        print(positions)
+        positions = [element_i for element_i in range(len(expression)) if "%!-+*/:^sngol|".find(expression[element_i]) != -1]
+        print(positions, 78)
         result_list = list()
         while positions != []:
-            print(positions)
+            print(positions, 77)
             # wrating first digit in result list
-            result_list.append(expression[(number_operators := positions.pop())+1:])
+            if (element := expression[(number_operators := positions.pop())+1:]) != "": result_list.append(element)
             # wrating operator in result list
             result_list.append(expression[number_operators])
-            print(result_list)
+            print(result_list, 76)
             # trimming string expression
             expression = expression[:number_operators]
-            print(expression)
+            print(expression, 75)
         if result_list == []:
             print(89)
-            result_list = [expression]
+            if expression: result_list = [expression]
         else:
-            result_list.append(expression)
+            if expression: result_list.append(expression)
             result_list = result_list[::-1]
         print(result_list, 34)
         return await self._calculate_expression_list(result_list)
