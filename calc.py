@@ -34,7 +34,7 @@ class CalculateMain:
     # Метод для поиска приоритетных скобок
     async def _searching_for_priority_brackets(self, expression: str, number_of_bracket: int) -> list[int]:
         return [(number_last_open_brackets := await self._find_nth_occurrence(expression, '(', number_of_bracket)), expression.find(')', number_last_open_brackets)]
-    async def _float(self, number: str):
+    async def _float(self, number: str) -> Decimal:
         match number[:2] :
             case "0x":
                 return Decimal(float.fromhex(number))
@@ -111,6 +111,11 @@ class CalculateMain:
                 tokens.pop(priority_operator_index)
                 a = await self._float(tokens[priority_operator_index-1])
                 tokens[priority_operator_index-1] = str(a+b)
+            elif '|' in tokens:
+                print(tokens)
+                tokens[0] = "".join([tokens[0], tokens[1], tokens[2] if len(tokens) == 3 else str(e)])
+                while len(tokens) > 1:
+                    tokens.pop()
         print(tokens[0], 35) 
         return tokens[0]
     # Calculate persent and factorial
@@ -145,9 +150,19 @@ class CalculateMain:
         while 'l' in tokens:
             t = tokens.index('l')
             tokens.pop(t)
-            tokens.pop(t+1)
-            tokens[t] = str(log(int(await self._float(tokens[t])), int(await self._float(tokens[t+1]))))
-            tokens.pop(t+1)
+            if len(tokens) >= t+2:
+                print(True)
+                if tokens[t+1] == '|':
+                    tokens.pop(t+1)
+                    tokens[t] = str(log(float(await self._float(tokens[t])), float(await self._float(tokens.pop(t+1) if len(tokens) >= t+2 else str(e)))))
+                else:
+                    tokens[t] = str(log(float(await self._float(tokens[t]))))
+
+            else:
+                print(False)
+                tokens[t] = str(log(float(await self._float(tokens[t]))))
+            print(890)
+
         return await self._calculate_expression_base(tokens)
     async def debuger(self):
         self.expression = self.expression.replace("sqrt", "s")
