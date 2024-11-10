@@ -13,7 +13,7 @@ class BaseCalc:
     # Удаление нулей в конце числа после запятой (наследие с C++)
     @staticmethod
     async def removing_zeros(expression: str) -> str:
-        if '.' in expression:
+        if '.' in expression and not 'E' in expression:
             while expression[-1] == '0': expression = expression[:-1]
             if expression and expression[-1] == '.': expression = expression[:-1]
         return expression if expression else '0'
@@ -51,7 +51,7 @@ class CalculateMain:
 
                 # Итоговое значение
                 return Decimal(integer_value) + Decimal(fractional_value)
-            case "0o":    
+            case "0t":    
                 number = number[2:]
                 integer_part, fractional_part = (number.split('.') if '.' in number else (number, ''))
 
@@ -69,10 +69,6 @@ class CalculateMain:
     # Main method for calculate
     async def _calculate_expression_base(self, tokens: list[str]) -> str:
         print(tokens, 73)
-        result = await self._float(tokens[0])
-        last_operator: str = '+'
-        token: str
-        num = 0
         priority_operator_index = 0
         while len(tokens) != 1:
             if '^' in tokens:
@@ -116,6 +112,8 @@ class CalculateMain:
                 tokens[0] = "".join([tokens[0], tokens[1], tokens[2] if len(tokens) == 3 else str(e)])
                 while len(tokens) > 1:
                     tokens.pop()
+        else:
+            tokens[0] = str(await self._float(tokens[0]))
         print(tokens[0], 35) 
         return tokens[0]
     # Calculate persent and factorial
@@ -169,6 +167,7 @@ class CalculateMain:
         self.expression = self.expression.replace("ln", "n")
         self.expression = self.expression.replace("log", "l")
         self.expression = self.expression.replace("lg", "g")
+        self.expression = self.expression.replace("**", "^")
         replay: bool = True
         while replay:
             replay = False
@@ -319,20 +318,7 @@ class LogicCalcBasic():
         global set_for_result_basic_calc, result_basic_calc
         result_basic_calc = asyncio.run(CalculateMain(self.entry_text).calc())
         set_for_result_basic_calc.set_text(result_basic_calc)
-""" 
-class EmptyElementForHistori(Gtk.Box):
-    def __init__(self):
-        super().__init__()
 
-        self.set_hexpand(True)
-        self.set_vexpand(True)
-        self.add_css_class("histori-element")
-
-class BoxForElementsHistori(Gtk.Box):
-    def __init__(self):
-        super().__init__(spacing=0, orientation=Gtk.Orientation.VERTICAL)
-        self.append(EmptyElementForHistori())
-"""
 class ScrolledWindowHistori(Gtk.ScrolledWindow):
     def __init__(self):
         super().__init__()
@@ -445,7 +431,7 @@ class NotebookCalcBasic(Gtk.Notebook):
         self.append_page(GridCalcBasicKeybord([["A", "B", "C"], ["D", "E", "F"]]), LabelForButtonCalcBasic("digits 16"))
         self.append_page(GridCalcBasicKeybord([["+", "-", ":", "*", "^"], ["!", "sqrt", "ln", "log", "lg"]]), LabelForButtonCalcBasic("operators"))
         self.append_page(GridCalcBasicKeybord([["_E", "_PI"]]), LabelForButtonCalcBasic("consts"))
-        self.append_page(GridCalcBasicKeybord([["round", "mod", "0x"], ["0b", "0o", ","]]), LabelForButtonCalcBasic("other"))
+        self.append_page(GridCalcBasicKeybord([["round", "mod", "0x"], ["0b", "0t", ","]]), LabelForButtonCalcBasic("other"))
 
 class GridCalcBasic(Gtk.Grid):
     def __init__(self):
